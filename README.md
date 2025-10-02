@@ -10,3 +10,9 @@ load the url or run websocket.html
 Chat
 
 ```
+
+
+
+Here is the link to the web-socket page. bst to download it when you have internet.
+
+https://hpssjellis.github.io/built-in-ai-wifi-chat/web-socket.html
