@@ -33,7 +33,7 @@ const myHTTPServer = myHTTP.createServer((myRequest, myResponse) => {
     // We only care about the root path to serve the chat page
     if (myRequest.url === '/') {
         // Resolve the path to the HTML file (assuming the HTML is saved locally)
-        const myFilePath = myPath.join(__dirname, 'chatClient.html');
+        const myFilePath = myPath.join(__dirname, 'web-socket00.html');
 
         // Read the HTML file content asynchronously
         myFS.readFile(myFilePath, (myError, myData) => {
