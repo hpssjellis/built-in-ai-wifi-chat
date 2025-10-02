@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat Client</title>
+</head>
+<body>
+    <h2>Simple WebSocket Chat</h2>
+
+    <label for="myServerSelect">Choose Server:</label>
+    <select id="myServerSelect" onchange="myChangeServer()">
+        <option value="ws://localhost:3000">Localhost</option>
+        <option value="ws://192.168.137.1:3000">Hotspot Host (192.168.137.1)</option>
+        <option value="custom">Custom...</option>
+    </select>
+
+    <input type="text" id="myCustomServer" placeholder="Enter ws:// url" style="width:250px; display:none" onblur="myChangeServer()">
+    <br><br>
+
+    <input type="text" id="myMessage" style="width:200px">
+    <input type="button" value="Send" onclick="mySendMessage()"><br><br>
+
+    <div id="myChatLog" style="border:1px solid black; width:300px; height:200px; overflow:auto"></div>
+
+    <script>
+        let mySocket;
+        let myCurrentUrl = "ws://localhost:3000";
+
+        function myChangeServer() {
+            let sel = document.getElementById("myServerSelect").value;
+            let customInput = document.getElementById("myCustomServer");
+
+            if (sel === "custom") {
+                customInput.style.display = "inline";
+                if (customInput.value.trim() !== "") {
+                    myCurrentUrl = customInput.value.trim();
+                }
+            } else {
+                customInput.style.display = "none";
+                myCurrentUrl = sel;
+            }
+
+            myConnect();
+        }
+
+        function myConnect() {
+            if (mySocket) {
+                mySocket.close();
+            }
+            mySocket = new WebSocket(myCurrentUrl);
+
+            mySocket.onopen = () => {
+                document.getElementById("myChatLog").innerHTML += "<div>Connected to " + myCurrentUrl + "</div>";
+            };
+            mySocket.onmessage = (event) => {
+                let log = document.getElementById("myChatLog");
+                log.innerHTML += "<div>" + event.data + "</div>";
+                log.scrollTop = log.scrollHeight;
+            };
+            mySocket.onclose = () => {
+                document.getElementById("myChatLog").innerHTML += "<div>Disconnected from " + myCurrentUrl + "</div>";
+            };
+        }
+
+        function mySendMessage() {
+            let msg = document.getElementById("myMessage").value;
+            if (mySocket && mySocket.readyState === WebSocket.OPEN) {
+                mySocket.send(msg);
+            }
+            document.getElementById("myMessage").value = "";
+        }
+
+        // Auto-connect on page load
+        window.onload = myConnect;
+    </script>
+</body>
+</html>
