@@ -2,10 +2,12 @@
 All AI chat using chrome built in AI and a mobile hotspot (hopefully without internet)
 
 ```
+With internet working
 Start the mobile hotspot
+disconect your internet.
 Set up the node server
-access your client to the hotspot
-load the url or run websocket.html
+access your client to the hotspot url
+load the url or run websocket.html and enter the url ws://#.#.#.#:8080
 
 Chat
 
