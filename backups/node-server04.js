@@ -5,12 +5,8 @@ const myHTTP = require('http'); // Node's built-in HTTP module
 
 // 2. Define the port (used for both HTTP and WebSocket)
 const myPortNumber = 8080;
-const myLocalhostURL = `ws://localhost:${myPortNumber}`;
 
-// --- Helper Function to Find Local IP (from original server) ---
-/**
- * Scans the network interfaces to find the machine's local (non-internal) IP address.
- */
+// --- Helper Function to Find Local IP ---
 function myGetLocalIPAddress() {
     const myInterfaces = myOS.networkInterfaces();
     for (const myName in myInterfaces) {
@@ -20,17 +16,17 @@ function myGetLocalIPAddress() {
             }
         }
     }
-    // Fallback if no specific IP is found
     return 'localhost';
 }
 
 // Get the local network IP once at startup
 const myLocalIP = myGetLocalIPAddress();
+const myLocalhostURL = `ws://localhost:${myPortNumber}`;
 const myNetworkURL = `ws://${myLocalIP}:${myPortNumber}`;
 
 
 // 3. Define the HTML content as a JavaScript multiline string (Template Literal)
-// The network IP is now a placeholder: {{NETWORK_URL}}
+// NOTE: We now use unique placeholders (@@...@@) for all dynamic values.
 const myChatClientHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,8 +81,8 @@ const myChatClientHTML = `<!DOCTYPE html>
             <label for="myServerSelect" style="font-weight: 600; font-size: 14px;">Server Address:</label>
             <select id="myServerSelect" onchange="myHandleSelectChange()">
                 <option value="" disabled selected>--- Select Server Option ---</option>
-                <option value="${myLocalhostURL}">1. Localhost: ${myLocalhostURL}</option>
-                <option value="{{NETWORK_URL}}">2. Local Network: {{NETWORK_URL}}</option>
+                <option value="@@LOCALHOST_URL@@">1. Localhost: @@LOCALHOST_URL@@</option>
+                <option value="@@NETWORK_URL@@">2. Local Network: @@NETWORK_URL@@</option>
                 <option value="custom">3. Enter Custom Address Below</option>
             </select>
 
@@ -131,9 +127,8 @@ const myChatClientHTML = `<!DOCTYPE html>
     </div>
 
     <script>
-        // --- My Core Variables ---
+        // --- My Core Variables (Unchanged) ---
         let myWebSocket;
-        // NOTE: myServerUrl will be automatically set by myHandleSelectChange
         let myServerUrl = ''; 
         
         const myChatLog = document.getElementById('myChatLog');
@@ -147,12 +142,8 @@ const myChatClientHTML = `<!DOCTYPE html>
         const myMaxRetries = 5;
         let myRetryCount = 0;
 
-        // --- UI Logic Functions ---
+        // --- UI Logic Functions (Unchanged) ---
 
-        /**
-         * @function myHandleSelectChange
-         * Updates the server URL based on the select box choice.
-         */
         function myHandleSelectChange() {
             const mySelectedValue = myServerSelect.value;
             
@@ -171,10 +162,6 @@ const myChatClientHTML = `<!DOCTYPE html>
             }
         }
 
-        /**
-         * @function myHandleCustomInputChange
-         * Updates the server URL and button state when the user types a custom address.
-         */
         function myHandleCustomInputChange() {
             myServerUrl = myCustomInput.value.trim();
             myConnectButton.disabled = !myServerUrl;
@@ -299,7 +286,7 @@ const myChatClientHTML = `<!DOCTYPE html>
             myChatLog.scrollTop = myChatLog.scrollHeight;
         }
 
-        // --- Initialization ---
+        // --- Initialization (Unchanged) ---
         document.addEventListener('DOMContentLoaded', () => {
              myHandleSelectChange();
         });
@@ -316,13 +303,17 @@ const myChatClientHTML = `<!DOCTYPE html>
 const myHTTPServer = myHTTP.createServer((myRequest, myResponse) => {
     // Only handle requests for the root path
     if (myRequest.url === '/') {
-        // 🚨 Dynamic insertion: Replace the placeholder with the actual network URL
-        const myFinalHTML = myChatClientHTML.replace('{{NETWORK_URL}}', myNetworkURL);
+        // 🚨 CORRECT DYNAMIC INSERTION: 
+        // 1. Replace the network IP placeholder
+        let myFinalHTML = myChatClientHTML.replace(/@@NETWORK_URL@@/g, myNetworkURL);
+        
+        // 2. Replace the localhost placeholder
+        myFinalHTML = myFinalHTML.replace(/@@LOCALHOST_URL@@/g, myLocalhostURL);
         
         // Send the generated HTML content
         myResponse.writeHead(200, {'Content-Type': 'text/html'});
         myResponse.end(myFinalHTML);
-        console.log('Served HTML client with embedded network address.');
+        console.log('Served HTML client with CORRECT embedded network address.');
     } else {
         // For any other URL, send a 404
         myResponse.writeHead(404, {'Content-Type': 'text/plain'});
@@ -341,21 +332,19 @@ myHTTPServer.listen(myPortNumber, () => {
 });
 
 // -----------------------------------------------------------------
-//                             WEBSOCKET SERVER SETUP
+//                             WEBSOCKET SERVER SETUP (Unchanged)
 // -----------------------------------------------------------------
 
 // 6. Create the WebSocket server, attaching it to the existing HTTP server
 const myServer = new myWebSocket.Server({ server: myHTTPServer });
 
-// 7. WebSocket event handlers (same logic as your original server)
+// 7. WebSocket event handlers 
 myServer.on('connection', function myHandleClientConnect(myClient) {
     console.log('A new WebSocket client has connected!');
 
-    // Handle incoming messages from that client
     myClient.on('message', async function myHandleIncomingMessage(myMessage) {
         console.log(`Received: ${myMessage}`);
         
-        // Broadcast the message to all OTHER connected clients
         myServer.clients.forEach(function myBroadcast(myOtherClient) {
             if (myOtherClient.readyState === myWebSocket.OPEN && myOtherClient !== myClient) {
                 myOtherClient.send(myMessage.toString());
@@ -363,6 +352,5 @@ myServer.on('connection', function myHandleClientConnect(myClient) {
         });
     });
     
-    // Simple way to handle a client disconnecting
     myClient.on('close', () => console.log('Client disconnected.'));
 });
