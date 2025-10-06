@@ -11,7 +11,6 @@ function myGetLocalIPAddress() {
     const myInterfaces = myOS.networkInterfaces();
     for (const myName in myInterfaces) {
         for (const myInterface of myInterfaces[myName]) {
-            // Check for IPv4 and ensure it's not the loopback address (internal)
             if (myInterface.family === 'IPv4' && !myInterface.internal) {
                 return myInterface.address;
             }
@@ -26,22 +25,23 @@ const myLocalhostURL = `ws://localhost:${myPortNumber}`;
 const myNetworkURL = `ws://${myLocalIP}:${myPortNumber}`;
 
 
-// 3. Define the HTML content for the Student Client as a JavaScript multiline string (Template Literal)
-// This content is dynamically updated below with the correct server IP addresses.
+// 3. Define the HTML content as a JavaScript multiline string (Template Literal)
+// NOTE: Added the myUserNameInput field and updated myServerSelectArea to include it.
 const myChatClientHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Chat Client</title>
+    <title>My Flexible Offline Chat Client</title>
     
     <style>
-        /* Minimal CSS for Simplicity */
+        /* CSS is minimal, only updated for visual clarity */
         body { font-family: Arial, sans-serif; margin: 0; background-color: #f3f4f6; }
         #myContainer { width: 95%; max-width: 500px; margin: 0 auto; padding-top: 10px; padding-bottom: 90px; }
         h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; text-align: center; color: #4f46e5; }
         .status-text { text-align: center; margin-bottom: 15px; font-size: 14px; font-weight: 500; }
         
+        /* Updated Area for Name and Connection Settings */
         .my-server-select-area { 
             display: flex; flex-direction: column; gap: 10px; padding: 10px; margin-bottom: 15px; 
             background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
@@ -50,34 +50,20 @@ const myChatClientHTML = `<!DOCTYPE html>
             padding: 10px; border: 1px solid #ccc; border-radius: 6px; 
         }
         
-        #myConnectButton { 
-            background-color: #10b981; color: white; font-weight: 600; border: none; cursor: pointer; 
-            transition: background-color 0.2s; 
-        }
+        #myConnectButton { background-color: #10b981; color: white; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; }
         #myConnectButton:hover:not(:disabled) { background-color: #059669; }
         #myConnectButton:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        #myChatLog { 
-            background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: calc(100vh - 250px); overflow-y: auto; 
-            scroll-behavior: smooth; 
-        }
+        #myChatLog { background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: calc(100vh - 270px); overflow-y: auto; scroll-behavior: smooth; }
         
-        .my-input-area { 
-            position: fixed; bottom: 0; left: 0; right: 0; background-color: white; padding: 10px; 
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1); 
-        }
+        .my-input-area { position: fixed; bottom: 0; left: 0; right: 0; background-color: white; padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
         .my-input-controls { display:flex; width: 100%; max-width: 500px; margin: 0 auto; gap: 8px; }
-        
+
         #myMessageInput { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-        #mySendButton { 
-            background-color: #4f46e5; color: white; font-weight: 600; padding: 10px 20px; 
-            border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; 
-        }
+        #mySendButton { background-color: #4f46e5; color: white; font-weight: 600; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
         #mySendButton:hover:not(:disabled) { background-color: #4338ca; }
         #mySendButton:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* Message Bubbles */
         .my-message-bubble { margin-bottom: 12px; display: flex; max-width: 100%; }
         .message-content { padding: 10px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .message-time { font-size: 10px; opacity: 0.7; margin-top: 4px; display: block; }
@@ -88,14 +74,13 @@ const myChatClientHTML = `<!DOCTYPE html>
         
         .my-message-other { justify-content: flex-start; }
         .my-message-other .message-content { background-color: #e5e7eb; color: #1f2937; border-bottom-left-radius: 0; }
-        .my-message-other .message-content strong { color: #4f46e5; font-weight: 700; } /* Highlight name in incoming messages */
+        .my-message-other .message-content strong { color: #4f46e5; font-weight: 700; } /* Highlight name */
         .my-message-other .message-time { text-align: left; }
         
         .my-message-system { text-align: center; font-size: 12px; margin-bottom: 12px; font-weight: 500; }
         .my-message-system.error { color: #ef4444; }
         .my-message-system.system { color: #6b7280; }
         
-        /* Status Colors */
         .status-green { color: #10b981; }
         .status-red { color: #ef4444; }
         .status-yellow { color: #f59e0b; }
@@ -114,12 +99,12 @@ const myChatClientHTML = `<!DOCTYPE html>
             <input 
                 type="text" 
                 id="myUserNameInput" 
-                placeholder="Enter your name here" 
+                placeholder="Enter your chat name" 
                 oninput="myCheckConnectionReadiness()"
             />
             
             <label for="myServerSelect" style="font-weight: 600; font-size: 14px;">Server Address:</label>
-            <select id="myServerSelect" onchange="myCheckConnectionReadiness()">
+            <select id="myServerSelect" onchange="myHandleSelectChange(); myCheckConnectionReadiness();">
                 <option value="" disabled selected>--- Select Server Option ---</option>
                 <option value="@@LOCALHOST_URL@@">1. Localhost: @@LOCALHOST_URL@@</option>
                 <option value="@@NETWORK_URL@@">2. Local Network: @@NETWORK_URL@@</option>
@@ -131,7 +116,7 @@ const myChatClientHTML = `<!DOCTYPE html>
                 id="myCustomInput" 
                 placeholder="Enter custom ws://address:port" 
                 style="display: none;"
-                oninput="myCheckConnectionReadiness()"
+                oninput="myHandleCustomInputChange(); myCheckConnectionReadiness();"
             />
             
             <button 
@@ -169,7 +154,8 @@ const myChatClientHTML = `<!DOCTYPE html>
         // --- Core Variables ---
         let myWebSocket;
         let myServerUrl = ''; 
-        let myUserName = ''; // Final name used for messages (set upon connection)
+        // NEW: Variable to hold the final, trimmed user name
+        let myUserName = ''; 
         
         const myChatLog = document.getElementById('myChatLog');
         const myMessageInput = document.getElementById('myMessageInput');
@@ -178,17 +164,17 @@ const myChatClientHTML = `<!DOCTYPE html>
         const myServerSelect = document.getElementById('myServerSelect');
         const myCustomInput = document.getElementById('myCustomInput');
         const myConnectButton = document.getElementById('myConnectButton');
-        const myUserNameInput = document.getElementById('myUserNameInput'); // New input element
-        
+        // NEW: Reference to the user name input field
+        const myUserNameInput = document.getElementById('myUserNameInput'); 
+
         const myMaxRetries = 5;
         let myRetryCount = 0;
 
-        // --- UI Logic Functions ---
-        
-        // This function checks both the name and the server URL readiness
-        function myCheckConnectionReadiness() {
-            // 1. Determine the server URL based on the selection
+        // --- UI Logic Functions (Modified) ---
+
+        function myHandleSelectChange() {
             const mySelectedValue = myServerSelect.value;
+            
             if (mySelectedValue === 'custom') {
                 myCustomInput.style.display = 'block';
                 myServerUrl = myCustomInput.value.trim();
@@ -199,16 +185,21 @@ const myChatClientHTML = `<!DOCTYPE html>
                 myCustomInput.style.display = 'none';
                 myServerUrl = '';
             }
-            
-            // 2. Check if both name and server URL are valid
+        }
+
+        function myHandleCustomInputChange() {
+            myServerUrl = myCustomInput.value.trim();
+        }
+        
+        // NEW: Consolidated check for both Name and Server readiness
+        function myCheckConnectionReadiness() {
             const myNameEntered = myUserNameInput.value.trim() !== '';
             const myServerReady = myServerUrl !== '';
             
-            // 3. Enable the Connect button only if both are ready
             myConnectButton.disabled = !(myNameEntered && myServerReady);
         }
 
-        // --- Core WebSocket Functions ---
+        // --- Core WebSocket Functions (Modified) ---
 
         async function myInitWebSocket() {
             myUserName = myUserNameInput.value.trim(); // Capture the final name
@@ -218,7 +209,7 @@ const myChatClientHTML = `<!DOCTYPE html>
                 return;
             }
             
-            // Lock the Name Input and Connection Controls
+            // NEW: Disable and make name input read-only upon successful connection attempt
             myUserNameInput.readOnly = true; 
             myUserNameInput.disabled = true;
             myServerSelect.disabled = true;
@@ -249,7 +240,6 @@ const myChatClientHTML = `<!DOCTYPE html>
                 };
 
                 myWebSocket.onmessage = async (myEvent) => {
-                    // All incoming messages are 'other' (from other students or the AI)
                     myDisplayMessage(myEvent.data, 'other');
                 };
 
@@ -266,7 +256,7 @@ const myChatClientHTML = `<!DOCTYPE html>
                     mySendButton.disabled = true;
                     myMessageInput.disabled = true;
                     
-                    // Unlock the Name Input and Connection Controls upon disconnection
+                    // NEW: Unlock connection controls upon disconnection
                     myUserNameInput.readOnly = false;
                     myUserNameInput.disabled = false;
                     myServerSelect.disabled = false;
@@ -300,7 +290,14 @@ const myChatClientHTML = `<!DOCTYPE html>
                 myConnectionStatus.textContent = \`Status: Reconnecting in \${myDelay / 1000}s...\`;
                 
                 await new Promise(myResolve => setTimeout(myResolve, myDelay));
-                myInitWebSocket();
+                // Only try to reconnect if the user name and server URL are still set
+                if (myUserName && myServerUrl) {
+                    myInitWebSocket();
+                } else {
+                    // If name/url was cleared somehow, fail gracefully
+                    myRetryCount = myMaxRetries; 
+                    myHandleReconnect();
+                }
             } else {
                 myConnectionStatus.textContent = "Status: Reconnection failed after multiple attempts. Click Connect.";
                 myConnectionStatus.classList.remove('status-yellow');
@@ -313,15 +310,8 @@ const myChatClientHTML = `<!DOCTYPE html>
             const myMessage = myMessageInput.value.trim();
             if (myMessage === "") { return; }
             
-            // FIX: Get the username directly from the input field to prevent ReferenceError
-            const myCurrentUserName = myUserNameInput.value.trim(); 
-            if (!myCurrentUserName) {
-                myDisplaySystemMessage("Cannot send. Please enter a user name.", 'error');
-                return;
-            }
-            
-            // PREPEND THE USER NAME
-            const myFullMessage = `${myCurrentUserName}: ${myMessage}`; 
+            // NEW: Prepend the user name (stored in myUserName) to the message
+            const myFullMessage = \`\${myUserName}: \${myMessage}\`; 
             
             if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
                 myWebSocket.send(myFullMessage);
@@ -333,7 +323,7 @@ const myChatClientHTML = `<!DOCTYPE html>
             }
         }
 
-        // Display functions
+        // Display functions (Modified to parse the incoming name:message format)
         function myDisplayMessage(myText, myType) {
             const myNewMessageDiv = document.createElement('div');
             myNewMessageDiv.classList.add('my-message-bubble', \`my-message-\${myType}\`);
@@ -342,13 +332,13 @@ const myChatClientHTML = `<!DOCTYPE html>
             let myContentHTML = '';
             
             if (myType === 'other') {
-                // Look for "Name: Message" format to separate the name
+                // NEW: Use a regex to look for "Name: Message" format
                 const myMatch = myText.match(/^([^:]+):\s*(.*)$/);
                 if (myMatch) {
-                    // Highlight the name for clarity
+                    // Highlight the name and separate content
                     myContentHTML = \`<strong>\${myMatch[1].trim()}</strong>: \${myMatch[2].trim()}\`;
                 } else {
-                    myContentHTML = myText; // Fallback if no colon is found (e.g., AI response without name prefix)
+                    myContentHTML = myText; // Fallback for system or non-standard messages
                 }
             } else {
                  myContentHTML = myText; // User's own message
@@ -364,6 +354,7 @@ const myChatClientHTML = `<!DOCTYPE html>
             myChatLog.scrollTop = myChatLog.scrollHeight;
         }
 
+
         function myDisplaySystemMessage(myText, myType) {
             const mySystemDiv = document.createElement('div');
             mySystemDiv.classList.add('my-message-system', myType);
@@ -372,8 +363,10 @@ const myChatClientHTML = `<!DOCTYPE html>
             myChatLog.scrollTop = myChatLog.scrollHeight;
         }
 
-        // --- Initialization ---
+        // --- Initialization (Modified) ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Initial call to set server URL based on default selection and check readiness
+            myHandleSelectChange(); 
             myCheckConnectionReadiness();
         });
 
@@ -382,23 +375,19 @@ const myChatClientHTML = `<!DOCTYPE html>
 </html>`;
 
 // -----------------------------------------------------------------
-//                          HTTP SERVER SETUP
+//                               HTTP SERVER SETUP
 // -----------------------------------------------------------------
 
 // 4. Create a basic HTTP server
 const myHTTPServer = myHTTP.createServer((myRequest, myResponse) => {
-    // Only handle requests for the root path
     if (myRequest.url === '/') {
-        // Replace dynamic placeholders in the HTML
         let myFinalHTML = myChatClientHTML.replace(/@@NETWORK_URL@@/g, myNetworkURL);
         myFinalHTML = myFinalHTML.replace(/@@LOCALHOST_URL@@/g, myLocalhostURL);
         
-        // Send the generated HTML content (Student Client)
         myResponse.writeHead(200, {'Content-Type': 'text/html'});
         myResponse.end(myFinalHTML);
-        console.log('Served student-socket.html with correct embedded network address.');
+        console.log('Served HTML client with embedded network address.');
     } else {
-        // For any other URL, send a 404
         myResponse.writeHead(404, {'Content-Type': 'text/plain'});
         myResponse.end('Not Found');
     }
@@ -406,29 +395,27 @@ const myHTTPServer = myHTTP.createServer((myRequest, myResponse) => {
 
 // 5. Start the HTTP server listening on the port
 myHTTPServer.listen(myPortNumber, () => {
-    // This is where the startup message is printed
     console.log(`\n======================================================`);
-    console.log(`| CHAT & WEB SERVER is running on port ${myPortNumber}!`);
-    console.log(`| Student Client URL: http://localhost:${myPortNumber}`);
+    console.log(`| My CHAT & WEB SERVER is running on port ${myPortNumber}!`);
+    console.log(`| Open this URL in your browser: http://localhost:${myPortNumber}`);
     console.log(`| Local Network IP: ${myLocalIP}`);
     console.log(`======================================================\n`);
 });
 
 // -----------------------------------------------------------------
-//                       WEBSOCKET SERVER SETUP 
+//                             WEBSOCKET SERVER SETUP
 // -----------------------------------------------------------------
 
 // 6. Create the WebSocket server, attaching it to the existing HTTP server
 const myServer = new myWebSocket.Server({ server: myHTTPServer });
 
-// 7. WebSocket event handlers 
+// 7. WebSocket event handlers 
 myServer.on('connection', function myHandleClientConnect(myClient) {
     console.log('A new WebSocket client has connected!');
 
     myClient.on('message', async function myHandleIncomingMessage(myMessage) {
-        // Broadcast the incoming message to all OTHER clients (students and the AI)
-        // Note: The message includes the student's name: "Name: Message Content"
-        console.log(`Received and Broadcasting: ${myMessage}`);
+        // Broadcast the message (which now includes the "Name: Message" prefix from the client)
+        console.log(`Received and Broadcasting: ${myMessage.toString()}`);
         
         myServer.clients.forEach(function myBroadcast(myOtherClient) {
             // Check if the client is still open and is NOT the sender
