@@ -19,8 +19,13 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/web-socket03.html
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server00.js   always the most stable node server typical te same as the main page 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server01.js  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server01.js  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server01.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server02.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server03.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server04.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server05.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server06.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server07.js  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js  
 
 
 
