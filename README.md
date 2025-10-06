@@ -14,8 +14,10 @@ Chat
 ```
 
 
+Probably a good idea to have a usb wifi adaptor so that the hotspot setup allows wifi without a working internet site.
 
-Here is the link to the web-socket page. bst to download it when you have internet.
+
+Here is the link to the web-socket page. Best to download it when you have internet. The web server also generates a version of this also.
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/student-socket.html
 
