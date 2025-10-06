@@ -241,7 +241,8 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
                     mySendButton.disabled = false;
                     myMessageInput.disabled = false;
                     myRetryCount = 0;
-                    myDisplaySystemMessage(\`Welcome, \${myUserName}!\`, 'system');
+                    // FIX: Changed template literal to string concatenation to avoid Node.js interpolation error
+                    myDisplaySystemMessage('Welcome, ' + myUserName + '!', 'system');
                 };
 
                 myWebSocket.onmessage = async (myEvent) => {
@@ -270,7 +271,7 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
                     myCustomInput.disabled = false;
                     
                     if (myEvent.wasClean) {
-                        myConnectionStatus.textContent = \`Status: Disconnected (Code: \${myEvent.code}). Click Connect to restart.\`;
+                        myConnectionStatus.textContent = 'Status: Disconnected (Code: ' + myEvent.code + '). Click Connect to restart.';
                         myConnectButton.disabled = false;
                     } else {
                         myConnectionStatus.textContent = "Status: Connection lost! Trying to reconnect...";
@@ -292,8 +293,8 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
             if (myRetryCount < myMaxRetries) {
                 myRetryCount++;
                 const myDelay = Math.pow(2, myRetryCount) * 1000;
-                console.log(\`Attempting reconnection in \${myDelay / 1000} seconds. (Attempt \${myRetryCount}/\${myMaxRetries})\`);
-                myConnectionStatus.textContent = \`Status: Reconnecting in \${myDelay / 1000}s...\`;
+                console.log('Attempting reconnection in ' + (myDelay / 1000) + ' seconds. (Attempt ' + myRetryCount + '/' + myMaxRetries + ')');
+                myConnectionStatus.textContent = 'Status: Reconnecting in ' + (myDelay / 1000) + 's...';
                 
                 await new Promise(myResolve => setTimeout(myResolve, myDelay));
                 myInitWebSocket();
@@ -309,8 +310,8 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
             const myMessage = myMessageInput.value.trim();
             if (myMessage === "") { return; }
             
-            // PREPEND THE USER NAME for broadcast
-            const myFullMessage = \`${myUserName}: \${myMessage}\`; 
+            // FIX: Changed template literal to string concatenation
+            const myFullMessage = myUserName + ': ' + myMessage; 
             
             if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
                 myWebSocket.send(myFullMessage);
@@ -325,7 +326,7 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
         // Display functions
         function myDisplayMessage(myText, myType) {
             const myNewMessageDiv = document.createElement('div');
-            myNewMessageDiv.classList.add('my-message-bubble', \`my-message-\${myType}\`);
+            myNewMessageDiv.classList.add('my-message-bubble', 'my-message-' + myType);
             const myTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             
             let myContentHTML = '';
@@ -333,20 +334,21 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
             if (myType === 'other') {
                 const myMatch = myText.match(/^([^:]+):\s*(.*)$/);
                 if (myMatch) {
-                    myContentHTML = \`<strong>\${myMatch[1].trim()}</strong>: \${myMatch[2].trim()}\`;
+                    // FIX: Changed template literal to string concatenation
+                    myContentHTML = '<strong>' + myMatch[1].trim() + '</strong>: ' + myMatch[2].trim();
                 } else {
                     myContentHTML = myText; 
                 }
             } else {
-                 myContentHTML = myText; 
+                myContentHTML = myText; 
             }
 
-            myNewMessageDiv.innerHTML = \`
+            myNewMessageDiv.innerHTML = `
                 <div class="message-content">
-                    <span class="block">\${myContentHTML}</span>
-                    <span class="message-time">\${myTime}</span>
+                    <span class="block">${myContentHTML}</span>
+                    <span class="message-time">${myTime}</span>
                 </div>
-            \`;
+            `;
             myChatLog.appendChild(myNewMessageDiv);
             myChatLog.scrollTop = myChatLog.scrollHeight;
         }
@@ -354,7 +356,7 @@ const myStudentChatClientHTML = `<!DOCTYPE html>
         function myDisplaySystemMessage(myText, myType) {
             const mySystemDiv = document.createElement('div');
             mySystemDiv.classList.add('my-message-system', myType);
-            mySystemDiv.textContent = \`--- \${myText} ---\`;
+            mySystemDiv.textContent = '--- ' + myText + ' ---';
             myChatLog.appendChild(mySystemDiv);
             myChatLog.scrollTop = myChatLog.scrollHeight;
         }
@@ -384,10 +386,8 @@ const myHTTPServer = myHTTP.createServer((myRequest, myResponse) => {
     } 
     // 4b. Serve the Teacher Client (teacher-socket.html path)
     else if (myURL.includes('teacher-socket.html') || myURL.includes('teacher')) {
-        // Fetch the separate teacher client HTML file content (assuming it's here)
-        // NOTE: Since the file content is too large to embed here, we will generate the
-        // teacher client as a separate HTML file which the user should open directly.
-        // We will just send a simple instruction page.
+        // NOTE: The teacher-socket.html content is not stored in this Node.js file.
+        // The user must open the teacher-socket.html file directly in their browser.
         myResponse.writeHead(200, {'Content-Type': 'text/html'});
         myResponse.end(`
             <!DOCTYPE html>
