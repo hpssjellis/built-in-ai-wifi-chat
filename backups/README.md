@@ -16,8 +16,11 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server04.js  wor
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server05.js  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server06.js   trying to get chat and LLM   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server07.js  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js  
-
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js  trying to send only JSON
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server09.js    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server10.js    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server11.js    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server12.js      
 
 
 ## But these backups are also at for the student
