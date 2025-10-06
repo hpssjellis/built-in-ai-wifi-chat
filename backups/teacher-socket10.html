@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Teacher AI Client (Local LLM Responder)</title>
+</head>
+<body>
+    <div id="myContainer">
+        <h1>Teacher AI Client (Local Network LLM)</h1>
+        <p id="myWSStatus" style="text-align: center; margin-bottom: 15px; font-weight: 500; color: red;">
+            WS Status: Disconnected. Select address and connect.
+        </p>
+        <p id="myAIStatus" style="text-align: center; margin-bottom: 15px; font-weight: 500; color: red;">
+            AI Status: Loading LanguageModel...
+        </p>
+        <p id="myTimerStatus" style="text-align: center; font-weight: 500; color: blue; margin-top: -10px; display: none;">
+            LLM Response Time: 0.0s
+        </p>
+        
+        <div id="myControls" style="display: flex; flex-direction: column; gap: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px;">
+            <label for="myServerSelect" style="font-weight: 600; font-size: 14px;">Server Address:</label>
+            <select id="myServerSelect" onchange="myHandleSelectChange()">
+                <option value="" disabled selected>--- Select Server Option ---</option>
+                <option value="ws://localhost:8080">1. Localhost: ws://localhost:8080</option>
+                <option value="custom">2. Enter Custom Address Below</option>
+            </select>
+            <input type="text" id="myCustomInput" placeholder="Enter custom ws://address:port" style="display: none; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"/>
+            <button id="myConnectButton" onclick="myInitWebSocket()" disabled style="background-color: green; color: white; font-weight: 600; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Connect & Start AI</button>
+            
+            <div style="margin-top: 5px; font-size: 14px;">
+                <input type="checkbox" id="myDebugToggle">
+                <label for="myDebugToggle">Enable Debug Messages (Queue/Skip Status)</label>
+            </div>
+            
+            <div style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px;">
+                <h2 style="font-size: 16px; margin-top: 0; color: #4CAF50;">Current Prompt:</h2>
+                <textarea id="myCurrentPrompt" rows="1" placeholder="Incoming student messages will appear here..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: vertical; min-height: 40px;"></textarea>
+            </div>
+        </div>
+        <div id="myChatLog" style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; height: 300px; overflow-y: auto; scroll-behavior: smooth;"></div>
+    </div>
+    <script>
+        // --- My Core Variables ---
+        let myWebSocket = null;
+        let myServerUrl = '';
+        let myLanguageModelSession = null;
+        let myIsProcessing = false; // Flag to indicate if the queue is currently being processed
+        let myTimerInterval = null;
+        let myStartTime = 0;
+        let myPromptQueue = []; // Queue to store incoming prompts
+                
+        const myChatLog = document.getElementById('myChatLog');
+        const myWSStatus = document.getElementById('myWSStatus');
+        const myAIStatus = document.getElementById('myAIStatus');
+        const myTimerStatus = document.getElementById('myTimerStatus');
+        const myServerSelect = document.getElementById('myServerSelect');
+        const myCustomInput = document.getElementById('myCustomInput');
+        const myConnectButton = document.getElementById('myConnectButton');
+        const myCurrentPrompt = document.getElementById('myCurrentPrompt');
+        const myDebugToggle = document.getElementById('myDebugToggle'); // New element
+
+        // --- Timer Functions ---
+
+        function myStartTimer() {
+            myStartTime = Date.now();
+            myTimerStatus.style.display = 'block';
+            myTimerStatus.textContent = "LLM Response Time: 0.0s";
+            
+            if (myTimerInterval) {
+                clearInterval(myTimerInterval);
+            }
+            
+            // Update the timer every 100 milliseconds
+            myTimerInterval = setInterval(() => {
+                const myElapsedTime = (Date.now() - myStartTime) / 1000;
+                myTimerStatus.textContent = `LLM Response Time: ${myElapsedTime.toFixed(1)}s`;
+            }, 100);
+        }
+
+        function myStopTimer() {
+            if (myTimerInterval) {
+                clearInterval(myTimerInterval);
+                myTimerInterval = null;
+            }
+            const myTotalTime = (Date.now() - myStartTime) / 1000;
+            myTimerStatus.textContent = `LLM Response Time: ${myTotalTime.toFixed(1)}s`;
+        }
+        
+        // Function to dynamically resize the textarea based on its content
+        function myAutoResizeTextarea() {
+            // Reset the height to 'auto' to correctly calculate the required height
+            myCurrentPrompt.style.height = 'auto'; 
+            // Set the height to match the scroll height (content height)
+            myCurrentPrompt.style.height = myCurrentPrompt.scrollHeight + 'px'; 
+        }
+
+        // --- UI & Connection Logic ---
+        
+        function myHandleSelectChange() {
+            const mySelectedValue = myServerSelect.value;
+            if (mySelectedValue === 'custom') {
+                myCustomInput.style.display = 'block';
+                myServerUrl = myCustomInput.value.trim();
+                myConnectButton.disabled = !myServerUrl;
+            } else if (mySelectedValue) {
+                myCustomInput.style.display = 'none';
+                myServerUrl = mySelectedValue;
+                myConnectButton.disabled = false;
+            } else {
+                myCustomInput.style.display = 'none';
+                myServerUrl = '';
+                myConnectButton.disabled = true;
+            }
+        }
+
+        function myHandleCustomInputChange() {
+            myServerUrl = myCustomInput.value.trim();
+            myConnectButton.disabled = !myServerUrl;
+        }
+
+        // 1. Initialize WebSocket Connection
+        async function myInitWebSocket() {
+            if (!myServerUrl) {
+                myDisplaySystemMessage("Please select a server address.", 'error', true);
+                return;
+            }
+            
+            myWSStatus.textContent = "WS Status: Connecting...";
+            myWSStatus.style.color = 'orange'; 
+            myConnectButton.disabled = true;
+
+            try {
+                // First, ensure the AI session is ready
+                await myInitAISession();
+                if (!myLanguageModelSession) {
+                    myWSStatus.textContent = "WS Status: Cannot connect, AI failed to load.";
+                    myConnectButton.disabled = false;
+                    return;
+                }
+
+                // Close any existing connection
+                if (myWebSocket && myWebSocket.readyState !== WebSocket.CLOSED) {
+                    myWebSocket.close(1000, 'Reconnecting');
+                }
+                
+                myWebSocket = new WebSocket(myServerUrl);
+
+                myWebSocket.onopen = async () => {
+                    myWSStatus.textContent = "WS Status: Connected and ready!";
+                    myWSStatus.style.color = 'green';
+                    myConnectButton.disabled = false;
+                    myDisplaySystemMessage("Connected to Node.js server.", 'system', true);
+                };
+
+                // 2. Handle incoming messages (Student Prompts)
+                myWebSocket.onmessage = async (myEvent) => {
+                    let myData;
+                    try {
+                        // The server MUST send JSON with username and message fields for this to work
+                        myData = JSON.parse(myEvent.data);
+                    } catch (e) {
+                        // If the server sends plain text, we default the username
+                        myData = { username: "Student", message: myEvent.data };
+                        myDisplaySystemMessage("Warning: Received non-JSON data from server. User defaulted to 'Student'.", 'error', false);
+                    }
+
+                    const myUser = myData.username || "Student";
+                    const myText = myData.message;
+                    
+                    myDisplayMessage(`[${myUser}] ${myText}`, 'other'); // Display student message locally
+                                            
+                    // Trigger the AI processing chain (now just enqueues and starts queue)
+                    await myProcessStudentPrompt(myText, myUser);
+                };
+
+                myWebSocket.onerror = async (myError) => {
+                    console.error("WebSocket Error:", myError);
+                    myWSStatus.textContent = "WS Status: Connection error.";
+                    myWSStatus.style.color = 'red';
+                };
+
+                myWebSocket.onclose = async (myEvent) => {
+                    myWSStatus.textContent = `WS Status: Disconnected (Code: ${myEvent.code}).`;
+                    myWSStatus.style.color = 'red';
+                    myConnectButton.disabled = false;
+                };
+            } catch (myError) {
+                myWSStatus.textContent = "WS Status: Failed to initialize. Check console.";
+                myConnectButton.disabled = false;
+            }
+        }
+
+        // --- Chrome AI Logic ---
+
+        // Initializes the Chrome AI LanguageModel session
+        async function myInitAISession() {
+            if (!('LanguageModel' in window)) {
+                myAIStatus.textContent = "AI Status: LanguageModel API not found! Check Chrome flags.";
+                myAIStatus.style.color = 'red';
+                return false;
+            }
+
+            try {
+                myAIStatus.textContent = 'AI Status: Creating LanguageModel session...';
+                myLanguageModelSession = await LanguageModel.create();
+                myAIStatus.textContent = 'AI Status: Ready to generate responses.';
+                myAIStatus.style.color = 'green';
+                return true;
+            } catch (myError) {
+                myAIStatus.textContent = 'AI Status: Error creating AI session.';
+                myAIStatus.style.color = 'red';
+                console.error("AI Session Error:", myError);
+                return false;
+            }
+        }
+
+        // Enqueues the incoming chat message and starts processing if idle
+        async function myProcessStudentPrompt(myPromptValue, myUserName) {
+            // Store the full prompt object in the queue
+            myPromptQueue.push({ prompt: myPromptValue, user: myUserName });
+            myDisplaySystemMessage("New message queued.", 'system', false);
+
+            // 2. If the AI is not currently busy, start processing the queue
+            if (!myIsProcessing) {
+                await myProcessQueue();
+            }
+        }
+        
+        // Processes items in the queue one by one
+        async function myProcessQueue() {
+            myIsProcessing = true;
+            myAIStatus.textContent = 'AI Status: PROCESSING QUEUE...';
+            myAIStatus.style.color = 'orange';
+
+            // Keep processing as long as there are items in the queue
+            while (myPromptQueue.length > 0) {
+                // 1. Dequeue the next prompt object
+                const myPromptObject = myPromptQueue.shift();
+                const myPromptValue = myPromptObject.prompt;
+                const myUserName = myPromptObject.user;
+                
+                // Check for the [LLM] tag
+                if (!myPromptValue.includes('[LLM]')) {
+                    myDisplaySystemMessage(`Message from ${myUserName} does not contain [LLM]. Skipping AI.`, 'system', false);
+                    myCurrentPrompt.value = `Skipped: [${myUserName}] ${myPromptValue}`;
+                    myAutoResizeTextarea(); // Auto-resize on content change
+                    continue; // Skip the rest of the loop for this prompt and go to the next item
+                }
+
+                myCurrentPrompt.value = `[${myUserName}] ${myPromptValue}`;
+                myAutoResizeTextarea(); // Auto-resize on content change
+                myDisplaySystemMessage("AI is generating response...", 'system', true); // Always show AI activity
+
+                try {
+                    if (!myLanguageModelSession) {
+                        throw new Error("AI Session not initialized.");
+                    }
+
+                    // --- Timer Start ---
+                    myStartTimer();
+
+                    // 2. Send prompt to Chrome AI
+                    const myAIResponseText = await myLanguageModelSession.prompt(myPromptValue);
+                    
+                    // --- Timer Stop ---
+                    myStopTimer();
+                    
+                    // 3. Display AI Response locally with User Attribution
+                    const myResponseDisplay = `<b>REPLY to ${myUserName}</b>: ${myAIResponseText}`;
+                    myDisplayMessage(myResponseDisplay, 'ai');
+
+                    // 4. Send AI Response back to Node.js server for broadcast
+                    if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+                        // Send a formatted reply object back to the server
+                        const myServerReply = {
+                            targetUser: myUserName,
+                            responseText: myAIResponseText
+                        };
+                        myWebSocket.send(JSON.stringify(myServerReply));
+                    } else {
+                        myDisplaySystemMessage("AI response generated, but WS is closed. Cannot send.", 'error', true);
+                    }
+
+                } catch (myError) {
+                    myStopTimer();
+                    myAIStatus.textContent = "AI Status: Error during prompt execution. See console.";
+                    myAIStatus.style.color = 'red';
+                    myDisplaySystemMessage("AI FAILED to respond. Check your Chrome flags.", 'error', true);
+                    console.error("AI Execution Error:", myError);
+                }
+            }
+
+            // After the while loop finishes, the queue is empty
+            myIsProcessing = false;
+            myAIStatus.textContent = "AI Status: Ready to generate responses.";
+            myAIStatus.style.color = 'green';
+        }
+                
+        // --- Message Display Functions ---
+
+        /**
+         * @param {string} myText - The text to display.
+         * @param {string} myType - 'other' for student, 'ai' for AI response.
+         */
+        function myDisplayMessage(myText, myType) {
+            const myNewMessageDiv = document.createElement('div');
+            myNewMessageDiv.style.marginBottom = '12px';
+            myNewMessageDiv.style.maxWidth = '90%';
+
+            const myTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            let myContentStyle = 'padding: 10px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);';
+            
+            if (myType === 'ai') {
+                // Style for AI reply
+                myContentStyle += ' background-color: lightblue; color: navy; font-weight: 600; border: 2px solid blue;';
+            } else {
+                // Style for Student/Other message
+                myContentStyle += ' background-color: lightgray; color: black;';
+            }
+
+            myNewMessageDiv.innerHTML = `
+                <div style="${myContentStyle}">
+                    <span style="display: block;">${myText}</span>
+                    <span style="font-size: 10px; opacity: 0.7; margin-top: 4px; display: block;">${myTime}</span>
+                </div>
+            `;
+            myChatLog.appendChild(myNewMessageDiv);
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        /**
+         * @param {string} myText - The system message text.
+         * @param {string} myType - 'system' or 'error'.
+         * @param {boolean} myAlwaysShow - If true, displays regardless of debug toggle.
+         */
+        function myDisplaySystemMessage(myText, myType, myAlwaysShow) {
+            if (!myAlwaysShow && !myDebugToggle.checked) {
+                return;
+            }
+            
+            const mySystemDiv = document.createElement('div');
+            let myColor = 'gray';
+            if (myType === 'error') {
+                myColor = 'red';
+            } else if (myType === 'system' && !myAlwaysShow) {
+                myColor = 'purple'; // Subtle color for debug messages
+            }
+            
+            mySystemDiv.style.textAlign = 'center';
+            mySystemDiv.style.fontSize = '12px';
+            mySystemDiv.style.marginBottom = '12px';
+            mySystemDiv.style.fontWeight = '500';
+            mySystemDiv.style.color = myColor;
+            mySystemDiv.textContent = `--- ${myText} ---`;
+            myChatLog.appendChild(mySystemDiv);
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => { 
+            myHandleSelectChange();
+        });
+    </script>
+</body>
+</html>
