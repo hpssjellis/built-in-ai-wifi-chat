@@ -1,4 +1,30 @@
 # built-in-ai-wifi-chat
+
+
+```
+Download this repository
+extract it
+open the main folder that has the node-server.js file
+right click Open windows terminal
+node -v
+npm -v
+npm install ws
+node node-server.js
+load teacher-socket.html file
+
+have students enter the url given in the node-server output, or give them the link to the student-socket.html file
+students send prompts to the teacher-socket.html which sends back the LLM reply.
+
+```
+
+
+
+
+
+
+
+
+
 All AI chat using chrome built in AI and a mobile hotspot (hopefully without internet)
 
 ```
