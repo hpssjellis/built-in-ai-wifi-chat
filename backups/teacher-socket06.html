@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher AI Client (Chrome Built-in, Localhost)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for better visual separation and interaction */
+        body { font-family: "Inter", sans-serif; background-color: #f3f4f6; }
+        .my-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+                
+        .my-chat-log { 
+            height: 60vh; 
+            overflow-y: auto; 
+            padding: 15px; 
+            background-color: white; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-top: 15px; 
+            border: 1px solid #e5e7eb;
+        }
+                
+        /* Message Styling */
+        .my-message-bubble { margin-bottom: 15px; padding: 10px; border-radius: 8px; }
+        .my-message-student { background-color: #e0f2f1; border-left: 4px solid #0d9488; } /* Teal for Student */
+        .my-message-ai { background-color: #eef2ff; border-left: 4px solid #4f46e5; } /* Indigo for AI */
+        .my-message-system { background-color: #fef3c7; border-left: 4px solid #f59e0b; text-align: center; } /* Yellow for System */
+        .my-message-error { background-color: #fee2e2; border-left: 4px solid #ef4444; } /* Red for Error */
+                
+        .my-message-header { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .my-message-time { font-size: 10px; color: #6b7280; float: right; }
+
+        /* Grouping Styles */
+        .my-student-thread { 
+            border: 1px solid #d1d5db; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            padding: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .my-thread-header { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: #4f46e5; 
+            margin-bottom: 10px; 
+            padding-bottom: 5px; 
+            border-bottom: 2px solid #eef2ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="my-container">
+        <h1 class="text-3xl font-extrabold text-center text-indigo-700 mb-4">Teacher AI Client (Localhost)</h1>
+                
+        <div id="myConnectionStatus" class="text-center p-2 mb-4 rounded-lg font-semibold text-red-700 bg-red-100">
+            Status: Connecting to ws://localhost:8080...
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow-md mb-6 space-y-3">
+            <p class="text-sm text-center text-gray-700 font-medium">
+                Connection URL: <span class="font-bold text-indigo-600">ws://localhost:8080</span> (Locked for security)
+            </p>
+                        
+            <p id="myAiStatus" class="text-sm font-semibold text-center text-red-600">
+                AI Status: Checking for Chrome LanguageModel...
+            </p>
+                        
+            <div class="flex items-center space-x-4 pt-2 border-t border-gray-200">
+                <label for="myGroupingToggle" class="font-bold text-gray-700 w-1/4 flex items-center">
+                    <input type="checkbox" id="myGroupingToggle" onclick="myToggleGrouping()" class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
+                    Group by Student Name
+                </label>
+                <span id="myQueueStatus" class="flex-grow text-sm font-medium text-yellow-600">Queue: Idle (0 waiting)</span>
+            </div>
+        </div>
+
+        <div id="myChatLog" class="my-chat-log">
+            <div class="my-message-system" id="myInitialMessage">--- System: Waiting for connection and Chrome AI availability. ---</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Variables ---
+        let myWebSocket;
+        let myLanguageModelSession = null;
+        const myServerUrl = "ws://localhost:8080"; // Hardcoded for security
+                
+        // --- Concurrency and Grouping Variables ---
+        let myIsProcessing = false; // Lock to prevent concurrent LLM calls
+        let myMessageQueue = [];    // Queue for holding pending student requests {name, text}
+        let myStudentThreads = {};  // Stores student-specific HTML elements for grouped view
+                
+        // --- DOM Elements ---
+        const myChatLog = document.getElementById('myChatLog');
+        const myConnectionStatus = document.getElementById('myConnectionStatus');
+        const myGroupingToggle = document.getElementById('myGroupingToggle');
+        const myQueueStatus = document.getElementById('myQueueStatus');
+        const myAiStatus = document.getElementById('myAiStatus');
+
+        // --- Core WebSocket Functions ---
+        async function myInitWebSocket() {
+            if (!('LanguageModel' in window)) {
+                myDisplaySystemMessage("ERROR: Chrome AI not available. Check Chrome flags.", 'error');
+                return;
+            }
+
+            if (myWebSocket && myWebSocket.readyState !== WebSocket.CLOSED) {
+                myWebSocket.close(1000, 'Reconnecting');
+            }
+
+            myConnectionStatus.textContent = "Status: Connecting to " + myServerUrl + "...";
+            myConnectionStatus.className = 'text-center p-2 mb-4 rounded-lg font-semibold text-yellow-700 bg-yellow-100';
+
+            try {
+                myWebSocket = new WebSocket(myServerUrl);
+
+                myWebSocket.onopen = async () => {
+                    myConnectionStatus.textContent = "Status: Connected. Listening for student prompts.";
+                    myConnectionStatus.className = 'text-center p-2 mb-4 rounded-lg font-semibold text-green-700 bg-green-100';
+                    myDisplaySystemMessage(`Connection established to chat server. AI is ready.`, 'system');
+                };
+
+                myWebSocket.onmessage = async (myEvent) => {
+                    const myIncomingMessage = myEvent.data;
+
+                    // 1. Check if it's a student question (format: "Name: Text")
+                    const myMatch = myIncomingMessage.match(/^([^:]+):\s*(.*)$/);
+
+                    if (myMatch) {
+                        const myStudentName = myMatch[1].trim();
+                        const myStudentPrompt = myMatch[2].trim();
+
+                        // We check the full prefix for "Teacher AI" to see if it's a response
+                        if (myStudentName.toLowerCase().includes('teacher ai')) {
+                            // This is an AI response being broadcast back. Just display it.
+                            myDisplayMessage(myIncomingMessage, 'ai');
+                        // MODIFIED: Only process with the LLM if the message contains the [LLM] tag
+                        } else if (myStudentPrompt.includes('[LLM]')) { 
+                            // This is a new student LLM prompt. Queue it up.
+                            myMessageQueue.push({ myStudentName, myStudentPrompt });
+                            myUpdateQueueStatus();
+                            myDisplayMessage(myIncomingMessage, 'student'); // Display the prompt immediately
+
+                            // Start processing the queue if not already running
+                            myProcessQueue();
+                        } else {
+                            // This is a normal chat message. Just display it, do not process with LLM.
+                            myDisplayMessage(myIncomingMessage, 'student');
+                        }
+                    } else {
+                        // Display any other unformatted messages (e.g., system messages from other clients)
+                        myDisplayMessage(myIncomingMessage, 'other');
+                    }
+                };
+
+                myWebSocket.onclose = async (myEvent) => {
+                    myConnectionStatus.textContent = "Status: Disconnected. Trying to reconnect...";
+                    myConnectionStatus.className = 'text-center p-2 mb-4 rounded-lg font-semibold text-yellow-700 bg-yellow-100';
+
+                    // Simple retry logic after 5 seconds
+                    setTimeout(myInitWebSocket, 5000);
+                };
+
+            } catch (myError) {
+                myDisplaySystemMessage("Failed to connect WebSocket. Retrying in 5 seconds...", 'error');
+                console.error("WebSocket Connection Error:", myError);
+                // Simple retry logic after 5 seconds
+                setTimeout(myInitWebSocket, 5000);
+            }
+        }
+
+        // --- Chrome AI Model Functions ---
+        async function myCallChromeAI(myStudentName, myPrompt) {
+            if (!('LanguageModel' in window)) {
+                throw new Error("Chrome LanguageModel not available.");
+            }
+
+            // 2. Create the session only once
+            if (!myLanguageModelSession) {
+                myAiStatus.textContent = 'AI Status: Creating AI session...';
+                myLanguageModelSession = await LanguageModel.create();
+                myAiStatus.textContent = 'AI Status: Session created and ready.';
+            }
+
+            // 3. Construct the full prompt (including system instruction)
+            const mySystemInstruction = `You are a helpful and supportive educational assistant for a classroom setting. Answer student questions concisely and clearly, using simple language appropriate for a high school level. Address the student by name if possible. The student asking is named ${myStudentName}.`;
+
+            // REMOVE the [LLM] tag before passing to the AI
+            const myCleanPrompt = myPrompt.replace('[LLM]', '').trim(); 
+            const myFullPrompt = mySystemInstruction + "\n\nStudent Question: " + myCleanPrompt;
+
+            // 4. Execute the prompt
+            const myResponse = await myLanguageModelSession.prompt(myFullPrompt);
+            return myResponse;
+        }
+
+        // --- Concurrency and LLM Processing ---
+        async function myProcessQueue() {
+            if (myIsProcessing || myMessageQueue.length === 0) {
+                return; // Already processing or queue is empty
+            }
+
+            myIsProcessing = true;
+            myUpdateQueueStatus();
+
+            while (myMessageQueue.length > 0) {
+                // Get the next item from the queue
+                const myRequest = myMessageQueue.shift();
+                myUpdateQueueStatus();
+
+                const { myStudentName, myStudentPrompt } = myRequest;
+                myDisplaySystemMessage(`Processing prompt for ${myStudentName}...`, 'system');
+
+                let myAIResponseText = "Sorry, I encountered an error while processing that question. Check the console for Chrome AI errors.";
+
+                try {
+                    // Call AI with the full prompt (which includes the [LLM] tag)
+                    myAIResponseText = await myCallChromeAI(myStudentName, myStudentPrompt);
+                } catch (myError) {
+                    console.error("Chrome AI Error:", myError);
+                    myDisplaySystemMessage(`Chrome AI Error for ${myStudentName}: ${myError.message}`, 'error');
+                }
+
+                // 3. Format and Broadcast the AI response
+                // NOTE: The student name is explicitly included in the prefix to allow for easy parsing
+                const myFullAIResponse = `Teacher AI to ${myStudentName}: ${myAIResponseText}`;
+
+                if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+                    myWebSocket.send(myFullAIResponse);
+                    // The onmessage handler will receive this broadcast and display it as 'ai'
+                } else {
+                    myDisplaySystemMessage(`Response for ${myStudentName} generated but failed to send (WebSocket closed).`, 'error');
+                }
+            }
+
+            myIsProcessing = false;
+            myUpdateQueueStatus();
+            myDisplaySystemMessage("Queue is clear.", 'system');
+        }
+
+        // --- UI & Display Logic (MODIFIED SECTION) ---
+        function myCheckChromeAiAvailability() {
+            if ('LanguageModel' in window) {
+                myAiStatus.textContent = 'AI Status: Chrome LanguageModel is available.';
+                myAiStatus.className = 'text-sm font-semibold text-center text-green-600';
+                myInitWebSocket(); // Start connecting automatically if AI is available
+            } else {
+                myAiStatus.textContent = 'AI Status: Chrome LanguageModel NOT found. Ensure the "Enable built-in AI" flag is enabled in Chrome.';
+                myAiStatus.className = 'text-sm font-semibold text-center text-red-600';
+            }
+        }
+
+        function myUpdateQueueStatus() {
+            const myStatus = myIsProcessing
+                ? `Queue: Processing... (${myMessageQueue.length} waiting)`
+                : `Queue: Idle (${myMessageQueue.length} waiting)`;
+            myQueueStatus.textContent = myStatus;
+        }
+
+        function myToggleGrouping() {
+            myRefreshChatView();
+        }
+
+        // MODIFIED: This function now correctly extracts the student name from both question and AI response formats.
+        function myGetStudentNameFromMessage(myText) {
+            // Match for Student Question: "Name: Text"
+            let myMatch = myText.match(/^([^:]+):\s*(.*)$/);
+            if (myMatch && !myMatch[1].toLowerCase().includes('teacher ai')) {
+                return myMatch[1].trim();
+            }
+
+            // Match for AI Response: "Teacher AI to Name: Text"
+            myMatch = myText.match(/^Teacher AI to ([^:]+):\s*(.*)$/i);
+            if (myMatch) {
+                return myMatch[1].trim();
+            }
+            
+            return null;
+        }
+
+        function myDisplayMessage(myText, myType) {
+            // System and Error messages are now handled exclusively by myDisplaySystemMessage
+            if (myType === 'system' || myType === 'error') {
+                   myDisplaySystemMessage(myText, myType);
+                   return;
+            }
+
+            const myStudentName = myGetStudentNameFromMessage(myText);
+            const myIsGrouped = myGroupingToggle.checked;
+
+            let myContent = myText;
+            let myMessageClass = '';
+            let myHeader = '';
+
+            if (myType === 'student') {
+                myMessageClass = 'my-message-student';
+                myHeader = `${myStudentName} asks: `;
+                // Remove the "Name: " prefix and the [LLM] tag if present from the content displayed
+                myContent = myText.replace(/^[^:]+:\s*/, '').replace('[LLM]', '').trim();
+            } else if (myType === 'ai') {
+                myMessageClass = 'my-message-ai';
+                // Use the explicit name in the header
+                myHeader = `AI response to ${myStudentName}: `;
+                // Remove the "Teacher AI to Name: " prefix from the content
+                myContent = myText.replace(/^Teacher AI to [^:]+:\s*/i, '').trim(); 
+            } else {
+                // Fallback for 'other' messages that aren't system/student/ai
+                myMessageClass = 'my-message-system';
+                myHeader = 'OTHER MESSAGE';
+                myContent = myText;
+            }
+
+            const myNewMessageDiv = document.createElement('div');
+            myNewMessageDiv.classList.add('my-message-bubble', myMessageClass);
+            // Crucial: Set the student name attribute for grouping/refresh
+            myNewMessageDiv.setAttribute('data-student-name', myStudentName || 'system'); 
+
+            const myTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            myNewMessageDiv.innerHTML = `
+                <div class="my-message-header">${myHeader}<span class="my-message-time">${myTime}</span></div>
+                <div>${myContent}</div>
+            `;
+
+            // Grouping logic
+            if (myIsGrouped && myStudentName && (myType === 'student' || myType === 'ai')) {
+                myEnsureStudentThreadExists(myStudentName);
+                myStudentThreads[myStudentName].appendChild(myNewMessageDiv);
+                myStudentThreads[myStudentName].lastElementChild.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                myChatLog.appendChild(myNewMessageDiv);
+                myChatLog.scrollTop = myChatLog.scrollHeight;
+            }
+        }
+
+        function myDisplaySystemMessage(myText, myType) {
+            const mySystemDiv = document.createElement('div');
+            let myMessageClass = 'my-message-system';
+            let myHeader = 'SYSTEM';
+            
+            if (myType === 'error') {
+                myMessageClass = 'my-message-error';
+                myHeader = 'ERROR';
+            }
+            
+            mySystemDiv.classList.add('my-message-bubble', myMessageClass);
+            mySystemDiv.setAttribute('data-student-name', 'system');
+            const myTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            mySystemDiv.innerHTML = `
+                <div class="my-message-header">${myHeader}<span class="my-message-time">${myTime}</span></div>
+                <div>--- ${myText} ---</div>
+            `;
+            myChatLog.appendChild(mySystemDiv);
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        function myEnsureStudentThreadExists(myStudentName) {
+            if (!myStudentThreads[myStudentName]) {
+                const myThreadDiv = document.createElement('div');
+                myThreadDiv.classList.add('my-student-thread');
+                myThreadDiv.id = `thread-${myStudentName.replace(/\s+/g, '-')}`;
+                myThreadDiv.innerHTML = `<div class="my-thread-header">${myStudentName}</div>`;
+
+                myStudentThreads[myStudentName] = myThreadDiv;
+
+                if (myGroupingToggle.checked) {
+                    myChatLog.appendChild(myThreadDiv);
+                }
+            }
+        }
+
+        function myRefreshChatView() {
+            const myAllMessages = Array.from(myChatLog.querySelectorAll('.my-message-bubble'));
+
+            // Clear the main log
+            myChatLog.innerHTML = '';
+
+            if (myGroupingToggle.checked) {
+                // Grouped View: Show threads and populate them
+                for (const myName in myStudentThreads) {
+                    const myThreadDiv = myStudentThreads[myName];
+                    const myHeader = myThreadDiv.querySelector('.my-thread-header');
+                    myThreadDiv.innerHTML = '';
+                    myThreadDiv.appendChild(myHeader);
+
+                    myChatLog.appendChild(myThreadDiv);
+                }
+
+                // Re-append messages to their threads or main log
+                myAllMessages.forEach(myMessage => {
+                    const myName = myMessage.getAttribute('data-student-name');
+                    const myClone = myMessage.cloneNode(true);
+
+                    if (myName && myName !== 'system' && myStudentThreads[myName]) {
+                        myStudentThreads[myName].appendChild(myClone);
+                    } else {
+                        myChatLog.appendChild(myClone);
+                    }
+                });
+            } else {
+                // Stream View: Show all messages sequentially
+                myAllMessages.forEach(myMessage => myChatLog.appendChild(myMessage.cloneNode(true)));
+            }
+
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            myCheckChromeAiAvailability();
+            myRefreshChatView();
+        });
+    </script>
+</body>
+</html>
