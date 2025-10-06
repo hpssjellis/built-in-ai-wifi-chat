@@ -47,6 +47,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket04.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket05.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket06.html kind of OK  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html     expecting JSON
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do
 
 
