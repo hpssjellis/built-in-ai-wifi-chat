@@ -14,7 +14,7 @@ Chat
 ```
 
 
-Probably a good idea to have a usb wifi adaptor so that the hotspot setup allows wifi without a working internet site.
+Probably a good idea to have a [usb wifi adaptor](https://www.amazon.com/Adapter-Plug-n-Play-Antenna-Suitable-Windows11/dp/B0D1BJTGFR) so that the hotspot setup allows wifi without a working internet site.
 
 
 Here is the link to the web-socket page. Best to download it when you have internet. The web server also generates a version of this also.
