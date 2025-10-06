@@ -37,13 +37,13 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket08.html
 ## These backups are for the teacher with a laptop with Chrome Built in AI and serving the node server.
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket00.html    Typically the same as the main one and the most stable  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket01.html  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket01.html   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket02.html   wrong API  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket03.html  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket04.html 
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket05.html 
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket03.html   
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket04.html  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket05.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket06.html kind of OK  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html 
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html 
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html  
 
 
