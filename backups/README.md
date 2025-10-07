@@ -16,8 +16,8 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server04.js  wor
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server05.js  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server06.js   trying to get chat and LLM   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server07.js  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js  trying to send only JSON
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server09.js    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js Good new stable Oct 6th, 2025 
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server09.js   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server10.js    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server11.js    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server12.js      
@@ -30,7 +30,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket01.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket02.html    New name pre-entry  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket03.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket04.html    
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket05.html    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket05.html    Good new stable OCt 6th, 2025
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket06.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket07.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket08.html    
@@ -48,7 +48,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket05.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket06.html kind of OK  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html     expecting JSON
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html     
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html     Good new stable OCt 6, 2025
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do
 
 
