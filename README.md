@@ -8,7 +8,7 @@ open the main folder that has the node-server.js file
 right click Open windows terminal
 node -v
 npm -v
-npm install ws
+npm install -g ws
 node node-server.js
 load teacher-socket.html file
 
