@@ -81,3 +81,12 @@ This should create a local Wi-Fi network that devices can connect to for a LAN (
 
 ```
 
+
+
+if installing ws has issues
+```
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+npm install -g ws
+```
+
+then close the command or power shell window
