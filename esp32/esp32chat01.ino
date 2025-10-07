@@ -1,162 +1,230 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
 
-// Wi-Fi credentials
-const char * mySsid = "YourNetworkName";
-const char * myPassword = "YourNetworkPassword";
+// --- Configuration ---
+// Set the credentials for the Hotspot (Access Point)
+const char* myHotspotSSID = "YOURSSID";
+const char* myHotspotPassword = "YOURPASS";
 
-// Server and WebSocket setup
+// Create AsyncWebServer object on port 80
 AsyncWebServer myServer(80);
-AsyncWebSocket myWebSocket("/ws");
+// Create a WebSocket object on a specific URL
+AsyncWebSocket myWebSocket("/ws"); 
 
-void myNotifyClients(const String& myMessage) {
-  // Send the message to all connected clients
-  myWebSocket.textAll(myMessage);
-}
-
-void onMyWebSocketEvent(
-  AsyncWebSocket * myServer, 
-  AsyncWebSocketClient * myClient, 
-  AwsEventType myType, 
-  void * myArg, 
-  uint8_t * myData, 
-  size_t myLen) {
-
-  // Handle various WebSocket events
-  if(myType == WS_EVT_CONNECT){
-    Serial.printf("Client #%u connected from %s\n", myClient->id(), myClient->remoteIP().toString().c_str());
-  } else if(myType == WS_EVT_DISCONNECT){
-    Serial.printf("Client #%u disconnected\n", myClient->id());
-  } else if(myType == WS_EVT_DATA){
-    // Data received from client
-    AwsFrameInfo * myInfo = (AwsFrameInfo*)myArg;
-    if(myInfo->final && myInfo->index == 0 && myInfo->len == myLen){
-      if(myInfo->opcode == WS_TEXT){
-        // Convert the received data to a String and broadcast it
-        myData[myLen] = 0; // Null-terminate the string
-        String myClientMessage = (char*)myData;
-        Serial.printf("Received message: %s\n", myClientMessage.c_str());
-        
-        // Broadcast the message to all connected clients
-        myNotifyClients(myClientMessage);
-      }
-    }
-  }
-}
-
-const char myIndexHtml[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML>
+// --- HTML Content (Minimal Inline CSS) ---
+const char myIndexHtml[] = R"raw(
+<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32-S3 Chat Server</title>
+  <title>ESP32 Chat Hotspot</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
   <style>
-    /* Minimal inline CSS as requested */
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #myChatBox { height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: scroll; margin-bottom: 10px; }
-    #myMessageBox { width: 80%; }
-    #mySendButton { width: 18%; }
+    /* Minimal custom CSS for readability */
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+    #myHeader { background-color: #333; color: white; padding: 10px; text-align: center; }
+    #myChatBox { 
+      height: 300px; 
+      overflow-y: scroll; 
+      padding: 10px; 
+      margin: 10px; 
+      border: 1px solid #ccc; 
+      background-color: white; 
+      border-radius: 8px; /* Added rounded corners */
+    }
+    #myInputContainer { 
+      display: flex; 
+      padding: 10px; 
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); 
+      background-color: #fff;
+    }
+    #myMessageInput { 
+      flex-grow: 1; 
+      padding: 10px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px;
+    }
+    #mySendButton { 
+      padding: 10px 20px; 
+      margin-left: 10px; 
+      cursor: pointer; 
+      background-color: #4CAF50; /* A friendly green */
+      color: white; 
+      border: none; 
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <h1>ESP32 Chat Server</h1>
+  <div id="myHeader">
+    <h2>XIAO ESP32S3 JSON Chat</h2>
+    <p>Hotspot IP: 192.168.4.1</p>
+  </div>
   <div id="myChatBox"></div>
-  <input type="text" id="myMessageBox" placeholder="Type a message...">
-  <button id="mySendButton" onclick="mySendMessage()">Send</button>
+  <div id="myInputContainer">
+    <input type="text" id="myMessageInput" placeholder="Type a message...">
+    <button id="mySendButton" onclick="mySendMessage()">Send</button>
+  </div>
 
   <script>
-    var myWebSocket;
+    const myChatBox = document.getElementById('myChatBox');
+    const myMessageInput = document.getElementById('myMessageInput');
     
-    // Use async/await for an asynchronous flow
-    async function myInitWebSocket() {
-      console.log('Trying to open a WebSocket connection...');
+    // The XIAO's AP IP is always 192.168.4.1
+    // The WebSocket attempts to connect to the ESP32's fixed AP IP
+    let myWebSocket = new WebSocket('ws://192.168.4.1/ws');
+
+    // --- Core Functions ---
+
+    // Function to handle opening the connection
+    myWebSocket.onopen = function (myEvent) {
+      myAppendMessage('System', 'Connected to the ESP32.', 'blue');
+    };
+
+    // Function to handle messages received from the ESP32
+    myWebSocket.onmessage = async function (myEvent) {
+      const myRawData = myEvent.data;
       
-      // The gateway is the WebSocket URL: ws://[ESP32_IP_Address]/ws
-      var myGateway = `ws://${window.location.hostname}/ws`;
-      myWebSocket = new WebSocket(myGateway);
-      
-      // Static links to function names
-      myWebSocket.onopen = myOnOpen;
-      myWebSocket.onclose = myOnClose;
-      myWebSocket.onmessage = myOnMessage;
-      myWebSocket.onerror = myOnError;
-    }
+      try {
+        // Use await to simulate waiting for JSON parsing (good practice for teaching async)
+        const myData = await new Promise(resolve => resolve(JSON.parse(myRawData)));
+        
+        // Use the data to display the message
+        myAppendMessage(myData.mySender, myData.myMessage, 'black');
+        
+      } catch (myError) {
+        // Handle non-JSON data or parsing errors
+        myAppendMessage('System Error', 'Received non-JSON data.', 'red');
+      }
+    };
+    
+    // Function to handle connection closure
+    myWebSocket.onclose = function (myEvent) {
+        myAppendMessage('System', 'Connection closed.', 'red');
+    };
 
-    function myOnOpen(event) {
-      console.log('WebSocket connection opened');
-      myUpdateChat('System: Connected to chat server.');
-    }
+    // Function to send a JSON message to the ESP32
+    async function mySendMessage() {
+      const myMessage = myMessageInput.value.trim();
+      if (myMessage === "") return;
 
-    function myOnClose(event) {
-      console.log('WebSocket connection closed');
-      myUpdateChat('System: Disconnected. Trying to reconnect in 2s...');
-      // Reconnect logic
-      setTimeout(myInitWebSocket, 2000); 
-    }
+      if (myWebSocket.readyState === WebSocket.OPEN) {
+        // 1. Create a JavaScript object with my-prefixed keys
+        const myDataObject = {
+          myMessage: myMessage,
+          mySender: "Client" 
+        };
+        
+        // 2. Convert the object to a JSON string
+        const myJsonString = JSON.stringify(myDataObject);
 
-    function myOnError(event) {
-      console.error('WebSocket Error:', event);
-    }
-
-    function myOnMessage(event) {
-      // Message received from the server (another client's message)
-      myUpdateChat(event.data);
-    }
-
-    function myUpdateChat(message) {
-      var myChatBox = document.getElementById('myChatBox');
-      var myNewMessage = document.createElement('p');
-      myNewMessage.innerHTML = message;
-      myChatBox.appendChild(myNewMessage);
-      // Auto-scroll to the latest message
-      myChatBox.scrollTop = myChatBox.scrollHeight;
-    }
-
-    function mySendMessage() {
-      var myMessageBox = document.getElementById('myMessageBox');
-      var myMessage = myMessageBox.value.trim();
-      
-      if (myMessage !== '') {
-        // You can add a username or ID here before sending: `Client-A: ${myMessage}`
-        myWebSocket.send(myMessage); 
-        myMessageBox.value = ''; // Clear the input field
+        // 3. Send the JSON string
+        myWebSocket.send(myJsonString);
+        
+        // Display the sent message immediately
+        myAppendMessage('You', myMessage, 'green'); 
+        myMessageInput.value = ''; // Clear input
+      } else {
+        myAppendMessage('System', 'WebSocket is not open. Refresh the page.', 'red');
       }
     }
+
+    // Function to dynamically add messages to the chat box
+    function myAppendMessage(mySender, myText, myColor) {
+      const myElement = document.createElement('p');
+      myElement.style.cssText = 'margin: 5px 0; line-height: 1.4;'; // Inline CSS for spacing
+      myElement.innerHTML = `<b style="color: ${myColor};">${mySender}:</b> ${myText}`;
+      myChatBox.appendChild(myElement);
+      // Auto-scroll to the bottom
+      myChatBox.scrollTop = myChatBox.scrollHeight;
+    }
     
-    // Start WebSocket when the page loads
-    window.onload = myInitWebSocket;
+    // Static link equivalent using an event listener for "Enter" key press
+    myMessageInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        mySendMessage();
+      }
+    });
+
   </script>
 </body>
-</html>)rawliteral";
+</html>
+)raw";
+
+// --- ESP32 Logic ---
+
+// Function to handle incoming WebSocket events
+void myOnWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  if (type == WS_EVT_CONNECT) {
+    Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+    // Send JSON welcome message
+    client->text("{\"mySender\":\"System\", \"myMessage\":\"Welcome to the chat!\"}"); 
+  } else if (type == WS_EVT_DISCONNECT) {
+    Serial.printf("WebSocket client #%u disconnected\n", client->id());
+  } else if (type == WS_EVT_DATA) {
+    AwsFrameInfo *info = (AwsFrameInfo*)arg;
+    
+    // *** FIX APPLIED HERE: Changed info->opCode to info->opcode ***
+    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+      // Data is a text message, expected to be JSON
+      StaticJsonDocument<200> myJsonDoc;
+      
+      // Deserialize the JSON string
+      DeserializationError myError = deserializeJson(myJsonDoc, data);
+
+      if (myError) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(myError.f_str());
+        // Notify client of JSON error
+        client->text("{\"mySender\":\"System\", \"myMessage\":\"Invalid JSON structure received.\"}")
+;        return;
+      }
+      
+      // Successfully parsed JSON (using keys matching the JS structure)
+      const char* myMessage = myJsonDoc["myMessage"];
+      const char* mySender = myJsonDoc["mySender"];
+      
+      Serial.printf("Client #%u received: Sender: %s, Message: %s\n", client->id(), mySender, myMessage);
+
+      // --- Broadcasting the received JSON message back to ALL connected clients ---
+      // This is the core chat server function.
+      String myResponse;
+      serializeJson(myJsonDoc, myResponse);
+      myWebSocket.textAll(myResponse);
+    }
+  }
+}
 
 void setup() {
   Serial.begin(115200);
+  
+  // 1. Setup Access Point (Hotspot) Mode
+  WiFi.softAP(myHotspotSSID, myHotspotPassword);
+  Serial.print("Hotspot created! Connect to: ");
+  Serial.println(myHotspotSSID);
+  Serial.print("Web Server IP (use this URL): ");
+  Serial.println(WiFi.softAPIP()); // This will be 192.168.4.1 by default
 
-  // Connect to Wi-Fi
-  WiFi.begin(mySsid, myPassword);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
-  Serial.println(WiFi.localIP());
-
-  // Setup WebSocket handler
-  myWebSocket.onEvent(onMyWebSocketEvent);
+  // 2. Configure WebSocket and server handlers
+  myWebSocket.onEvent(myOnWsEvent);
   myServer.addHandler(&myWebSocket);
 
-  // Serve the HTML page on the root ("/")
-  myServer.on("/", HTTP_GET, [](AsyncWebServerRequest * myRequest){
-    myRequest->send_P(200, "text/html", myIndexHtml);
+  // Route to serve the main chat page (index.html)
+  myServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html", myIndexHtml);
   });
 
-  // Start the server
+  // Handle all other requests
+  myServer.onNotFound([](AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+  });
+
+  // 3. Start the Server
   myServer.begin();
-  Serial.println("HTTP and WebSocket server started.");
 }
 
 void loop() {
-  // Use cleanupClients in the loop to manage connections
-  myWebSocket.cleanupClients();
-  // Since we use the Asynchronous server, the loop is kept clean.
+  // WebSocket maintenance - essential for cleaning up closed connections
+  myWebSocket.cleanupClients(); 
 }
