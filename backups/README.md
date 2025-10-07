@@ -52,3 +52,32 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do
 
 
+
+
+
+## Notes
+
+```
+Open Command Prompt as an Administrator (Search for cmd, right-click, and select "Run as administrator").
+
+Type the following command and press Enter:
+
+netsh wlan show drivers
+Look for the line that says "Hosted network supported". If it says "Yes", you are good to go.
+
+Set Up the Hosted Network:
+
+In the same Command Prompt window, type the following command to set up your network name and password. Replace myHotspotName and myHotspotPassword with your desired name and a password (minimum 8 characters).
+
+netsh wlan set hostednetwork mode=allow ssid=myHotspotName key=myHotspotPassword
+Press Enter. You should see confirmation messages.
+
+Start the Hosted Network:
+
+Type the following command and press Enter:
+
+netsh wlan start hostednetwork
+This should create a local Wi-Fi network that devices can connect to for a LAN (local network) connection, even without internet access.
+
+```
+
