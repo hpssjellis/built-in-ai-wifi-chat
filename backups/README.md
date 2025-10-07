@@ -93,3 +93,48 @@ npm install -g ws
 ```
 
 then close the command or power shell window
+
+
+
+
+
+## try this
+
+Steps to Create and Use a Loopback Adapter:
+Open Device Manager:
+
+Search for "Device Manager" in the Start Menu and open it.
+
+Add Legacy Hardware:
+
+Click on your computer's name at the very top of the list.
+
+Go to the Action menu and select "Add legacy hardware."
+
+Manual Installation:
+
+Click "Next" on the first screen.
+
+Select "Install the hardware that I manually select from a list (Advanced)" and click "Next."
+
+Select Network Adapter:
+
+Choose "Network adapters" from the list and click "Next."
+
+Install Loopback:
+
+On the left side, select "Microsoft."
+
+On the right side, select "Microsoft KM-TEST Loopback Adapter" (or just "Loopback Adapter").
+
+Click "Next" twice and then "Finish."
+
+Start Mobile Hotspot:
+
+Go to Settings → Network & internet → Mobile hotspot.
+
+In the "Share my internet connection from" dropdown, select the new adapter you just created (it might be listed as Ethernet 2 or a similar local connection).
+
+Turn on the Mobile Hotspot.
+
+Your Archer T3U should now broadcast a local-only Wi-Fi network that your students' devices can connect to for a local area network (LAN) connection.
