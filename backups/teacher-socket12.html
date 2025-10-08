@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Teacher AI Client (Local LLM Responder)</title>
+</head>
+<body>
+    <div id="myContainer">
+        <h1>Teacher AI Client (Local Network LLM)</h1>
+        <p id="myWSStatus" style="text-align: center; margin-bottom: 15px; font-weight: 500; color: red;">
+            WS Status: Disconnected. Select address and connect.
+        </p>
+        <p id="myAIStatus" style="text-align: center; margin-bottom: 15px; font-weight: 500; color: red;">
+            AI Status: Model not loaded.
+        </p>
+        <p id="myTimerStatus" style="text-align: center; font-weight: 500; color: blue; margin-top: -10px; display: none;">
+            LLM Response Time: 0.0s
+        </p>
+        
+        <div id="myControls" style="display: flex; flex-direction: column; gap: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px;">
+            <label for="myServerSelect" style="font-weight: 600; font-size: 14px;">Server Address:</label>
+            <select id="myServerSelect" onchange="myHandleSelectChange()">
+                <option value="" disabled selected>--- Select Server Option ---</option>
+                <option value="ws://localhost:8080">1. Localhost: ws://localhost:8080</option>
+                <option value="custom">2. Enter Custom Address Below</option>
+            </select>
+            <input type="text" id="myCustomInput" placeholder="Enter custom ws://address:port" style="display: none; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"/>
+            
+            <input type="button" value="Connect to WebSocket" 
+                   onclick="myInitWebSocket()" 
+                   id="myConnectButton" 
+                   disabled 
+                   style="background-color: green; color: white; font-weight: 600; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">
+            
+            <input type="button" value="Load AI Model" 
+                   onclick="myInitAISession()" 
+                   id="myLoadAIButton" 
+                   style="background-color: blue; color: white; font-weight: 600; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">
+            
+            <div style="margin-top: 5px; font-size: 14px;">
+                <input type="checkbox" id="myDebugToggle">
+                <label for="myDebugToggle">Enable Debug Messages (Queue/Skip Status)</label>
+            </div>
+            
+            <div style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px;">
+                <h2 style="font-size: 16px; margin-top: 0; color: #4CAF50;">Current Prompt:</h2>
+                <textarea id="myCurrentPrompt" rows="1" placeholder="Incoming student messages will appear here..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: vertical; min-height: 40px;"></textarea>
+            </div>
+        </div>
+        <div id="myChatLog" style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; height: 300px; overflow-y: auto; scroll-behavior: smooth;"></div>
+    </div>
+
+    <script>
+        let myWebSocket = null;
+        let myServerUrl = '';
+        let myLanguageModelSession = null;
+        let myIsProcessing = false;
+        let myTimerInterval = null;
+        let myStartTime = 0;
+        let myPromptQueue = [];
+
+        const myChatLog = document.getElementById('myChatLog');
+        const myWSStatus = document.getElementById('myWSStatus');
+        const myAIStatus = document.getElementById('myAIStatus');
+        const myTimerStatus = document.getElementById('myTimerStatus');
+        const myServerSelect = document.getElementById('myServerSelect');
+        const myCustomInput = document.getElementById('myCustomInput');
+        const myConnectButton = document.getElementById('myConnectButton');
+        const myCurrentPrompt = document.getElementById('myCurrentPrompt');
+        const myDebugToggle = document.getElementById('myDebugToggle');
+
+        // Timer Functions
+        function myStartTimer() {
+            myStartTime = Date.now();
+            myTimerStatus.style.display = 'block';
+            myTimerStatus.textContent = "LLM Response Time: 0.0s";
+            clearInterval(myTimerInterval);
+            myTimerInterval = setInterval(() => {
+                const myElapsedTime = (Date.now() - myStartTime) / 1000;
+                myTimerStatus.textContent = `LLM Response Time: ${myElapsedTime.toFixed(1)}s`;
+            }, 100);
+        }
+
+        function myStopTimer() {
+            clearInterval(myTimerInterval);
+            const myTotalTime = (Date.now() - myStartTime) / 1000;
+            myTimerStatus.textContent = `LLM Response Time: ${myTotalTime.toFixed(1)}s`;
+        }
+
+        function myHandleSelectChange() {
+            const mySelectedValue = myServerSelect.value;
+            if (mySelectedValue === 'custom') {
+                myCustomInput.style.display = 'block';
+                myServerUrl = myCustomInput.value.trim();
+                myConnectButton.disabled = !myServerUrl;
+            } else if (mySelectedValue) {
+                myCustomInput.style.display = 'none';
+                myServerUrl = mySelectedValue;
+                myConnectButton.disabled = false;
+            } else {
+                myCustomInput.style.display = 'none';
+                myServerUrl = '';
+                myConnectButton.disabled = true;
+            }
+        }
+
+        // Load AI manually
+        async function myInitAISession() {
+            if (!('LanguageModel' in window)) {
+                myAIStatus.textContent = "AI Status: LanguageModel API not found! Check Chrome flags.";
+                myAIStatus.style.color = 'red';
+                return;
+            }
+            try {
+                myAIStatus.textContent = 'AI Status: Loading LanguageModel...';
+                myLanguageModelSession = await LanguageModel.create();
+                myAIStatus.textContent = 'AI Status: Ready.';
+                myAIStatus.style.color = 'green';
+            } catch (err) {
+                myAIStatus.textContent = 'AI Status: Failed to load.';
+                myAIStatus.style.color = 'red';
+                console.error(err);
+            }
+        }
+
+        // Connect WebSocket only (no AI required)
+        async function myInitWebSocket() {
+            if (!myServerUrl) {
+                myDisplaySystemMessage("Please select a server address.", 'error', true);
+                return;
+            }
+
+            myWSStatus.textContent = "WS Status: Connecting...";
+            myWSStatus.style.color = 'orange'; 
+            myConnectButton.disabled = true;
+
+            if (myWebSocket && myWebSocket.readyState !== WebSocket.CLOSED) {
+                myWebSocket.close(1000, 'Reconnecting');
+            }
+
+            try {
+                myWebSocket = new WebSocket(myServerUrl);
+
+                myWebSocket.onopen = () => {
+                    myWSStatus.textContent = "WS Status: Connected!";
+                    myWSStatus.style.color = 'green';
+                    myConnectButton.disabled = false;
+                    myDisplaySystemMessage("Connected to WebSocket server.", 'system', true);
+                };
+
+                myWebSocket.onmessage = async (myEvent) => {
+                    let myData;
+                    try { myData = JSON.parse(myEvent.data); }
+                    catch { myData = { username: "Student", message: myEvent.data }; }
+
+                    const myUser = myData.username || "Student";
+                    const myText = myData.message;
+                    myDisplayMessage(`[${myUser}] ${myText}`, 'other');
+                    await myProcessStudentPrompt(myText, myUser);
+                };
+
+                myWebSocket.onerror = (err) => {
+                    myWSStatus.textContent = "WS Status: Connection error.";
+                    myWSStatus.style.color = 'red';
+                    console.error("WebSocket Error:", err);
+                };
+
+                myWebSocket.onclose = (evt) => {
+                    myWSStatus.textContent = `WS Status: Disconnected (Code: ${evt.code}).`;
+                    myWSStatus.style.color = 'red';
+                    myConnectButton.disabled = false;
+                };
+            } catch (err) {
+                myWSStatus.textContent = "WS Status: Failed to connect.";
+                myConnectButton.disabled = false;
+                console.error(err);
+            }
+        }
+
+        // Queue handling
+        async function myProcessStudentPrompt(myPromptValue, myUserName) {
+            myPromptQueue.push({ prompt: myPromptValue, user: myUserName });
+            if (!myIsProcessing) await myProcessQueue();
+        }
+
+        async function myProcessQueue() {
+            myIsProcessing = true;
+            while (myPromptQueue.length > 0) {
+                const { prompt, user } = myPromptQueue.shift();
+                if (!prompt.includes('[LLM]')) continue;
+
+                if (!myLanguageModelSession) {
+                    myDisplaySystemMessage("AI not loaded, skipping.", 'error', true);
+                    continue;
+                }
+
+                try {
+                    myStartTimer();
+                    const myAIResponse = await myLanguageModelSession.prompt(prompt);
+                    myStopTimer();
+                    myDisplayMessage(`<b>REPLY to ${user}</b>: ${myAIResponse}`, 'ai');
+                    if (myWebSocket.readyState === WebSocket.OPEN)
+                        myWebSocket.send(JSON.stringify({ targetUser: user, responseText: myAIResponse }));
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            myIsProcessing = false;
+        }
+
+        function myDisplayMessage(myText, myType) {
+            const myNewDiv = document.createElement('div');
+            myNewDiv.style.marginBottom = '12px';
+            myNewDiv.innerHTML = `<div style="padding:10px;border-radius:12px;${myType==='ai'?'background-color:lightblue;border:2px solid blue;':'background-color:lightgray;'}">${myText}</div>`;
+            myChatLog.appendChild(myNewDiv);
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        function myDisplaySystemMessage(myText, myType, myAlwaysShow) {
+            if (!myAlwaysShow && !myDebugToggle.checked) return;
+            const myDiv = document.createElement('div');
+            myDiv.style.textAlign = 'center';
+            myDiv.style.fontSize = '12px';
+            myDiv.style.color = myType === 'error' ? 'red' : 'gray';
+            myDiv.textContent = `--- ${myText} ---`;
+            myChatLog.appendChild(myDiv);
+            myChatLog.scrollTop = myChatLog.scrollHeight;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            myHandleSelectChange();
+        });
+    </script>
+</body>
+</html>
