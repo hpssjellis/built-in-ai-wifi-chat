@@ -64,7 +64,13 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html
 
 ## ESP32 wifi access and websocket server and student HTML generator with send and prompt
 
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32s3-webpage01.ino   proof of concept counter  
+
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket02.ino  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket03.ino   Kind of fully works  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket04.ino  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket05.ino  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket06.ino  
 
 
 ## Notes
