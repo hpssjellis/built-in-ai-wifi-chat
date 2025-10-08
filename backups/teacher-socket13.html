@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Chat & LLM Prompt</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #e0f2fe; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        #myChatBox {
+            width: 95%;
+            max-width: 550px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h2 {
+            color: #0369a1; /* Deep sky blue header */
+            text-align: center;
+            margin-top: 0;
+        }
+        #myMessages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #bae6fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f0f9ff; /* Very light blue chat area */
+            text-align: left;
+        }
+        .myName {
+            font-weight: bold;
+            color: #1d4ed8; /* Blue for usernames */
+        }
+        .mySystem {
+            color: #6b7280;
+            font-size: 12px;
+            text-align: center;
+            margin: 4px 0;
+            font-style: italic;
+        }
+        .myLLMResponse {
+            background-color: #dbeafe; /* Lighter blue background for LLM responses */
+            border-left: 4px solid #3b82f6;
+            padding: 8px;
+            margin: 6px 0;
+            border-radius: 4px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 4px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .myControls {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .myControls input[type="text"] {
+            flex-grow: 1;
+            margin: 0;
+        }
+        .myControls input[type="button"] {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #mySendButton {
+            background-color: #22c55e; /* Green for chat send */
+            color: white;
+        }
+        #mySendButton:hover {
+            background-color: #16a34a;
+        }
+        #myPromptButton {
+            background-color: #f97316; /* Orange for LLM prompt */
+            color: white;
+            white-space: nowrap; /* Prevent button text from wrapping */
+            flex-shrink: 0;
+        }
+        #myPromptButton:hover {
+            background-color: #ea580c;
+        }
+    </style>
+</head>
+<body>
+<div id="myChatBox">
+    <h2>Teacher Console</h2>
+    <p style="text-align:center;">Status: <span id="myStatus" style="color:#ef4444; font-weight:bold;">Disconnected</span></p>
+
+    <input type="text" id="myNameInput" placeholder="Your name (e.g., 'Teacher')" value="Teacher" style="margin-bottom:10px;">
+    
+    <div id="myMessages"></div>
+
+    <div class="myControls">
+        <input type="text" id="myMessageInput" placeholder="Type chat message or LLM prompt...">
+        <input type="button" value="Chat" id="mySendButton" onclick="mySendMessage()">
+        <input type="button" value="LLM Prompt" id="myPromptButton" onclick="mySendLLMPrompt()">
+    </div>
+</div>
+
+<script>
+    let myWebSocket;
+    let myName = "";
+    let myRetryTimer;
+
+    // --- Utility Functions ---
+
+    function myDisplayMessage(myName, myMsg) {
+        const myMessages = document.getElementById('myMessages');
+        const myDiv = document.createElement('div');
+        
+        // Check if the message is an LLM response based on a unique prefix (to be removed later)
+        if (myMsg.startsWith('LLM_RESPONSE:')) {
+            myDiv.className = 'myLLMResponse';
+            myDiv.innerHTML = `<span class="myName">LLM:</span> ${myMsg.substring('LLM_RESPONSE:'.length).trim()}`;
+        } else {
+            myDiv.innerHTML = `<span class="myName">${myName}:</span> ${myMsg}`;
+        }
+        
+        myMessages.appendChild(myDiv);
+        myMessages.scrollTop = myMessages.scrollHeight;
+    }
+
+    function myDisplaySystemMessage(myMsg) {
+        const myMessages = document.getElementById('myMessages');
+        const myDiv = document.createElement('div');
+        myDiv.className = "mySystem";
+        myDiv.textContent = "--- " + myMsg + " ---";
+        myMessages.appendChild(myDiv);
+        myMessages.scrollTop = myMessages.scrollHeight;
+    }
+    
+    // --- WebSocket Connection ---
+
+    function myConnect() {
+        const myUrl = `ws://${window.location.hostname}/ws`;
+        myWebSocket = new WebSocket(myUrl);
+
+        myWebSocket.onopen = async () => {
+            document.getElementById('myStatus').textContent = "Connected";
+            document.getElementById('myStatus').style.color = "#22c55e";
+            myDisplaySystemMessage("Connected to chat server");
+            clearTimeout(myRetryTimer);
+        };
+
+        myWebSocket.onmessage = async (event) => {
+            try {
+                const myData = JSON.parse(event.data);
+                if (myData.system) {
+                    myDisplaySystemMessage(myData.system);
+                } else if (myData.username && myData.message) {
+                    // All messages (chat and LLM responses) come through here
+                    myDisplayMessage(myData.username, myData.message);
+                }
+            } catch (myError) {
+                console.log("Non-JSON or parse error:", myError, event.data);
+            }
+        };
+
+        myWebSocket.onclose = async () => {
+            document.getElementById('myStatus').textContent = "Disconnected";
+            document.getElementById('myStatus').style.color = "#ef4444";
+            myDisplaySystemMessage("Connection closed. Retrying...");
+            myRetryTimer = setTimeout(myConnect, 3000);
+        };
+        
+        myWebSocket.onerror = async (myError) => {
+             console.error("WebSocket Error:", myError);
+        };
+    }
+
+    // --- Messaging Logic ---
+
+    function myGetUserName() {
+        if (!myName) {
+            myName = document.getElementById('myNameInput').value.trim() || "Teacher";
+        }
+        return myName;
+    }
+
+    // Sends a regular chat message
+    async function mySendMessage() {
+        if (!myWebSocket || myWebSocket.readyState !== WebSocket.OPEN) return;
+        
+        const myMessage = document.getElementById('myMessageInput').value.trim();
+        const myUserName = myGetUserName();
+        
+        if (myUserName && myMessage) {
+            // Display locally immediately (since the server is configured to echo back, 
+            // but displaying locally ensures the UI feels responsive)
+            myDisplayMessage(myUserName, myMessage);
+
+            const myJson = JSON.stringify({ username: myUserName, message: myMessage });
+            await myWebSocket.send(myJson);
+            document.getElementById('myMessageInput').value = "";
+        }
+    }
+    
+    // Sends a special LLM prompt request
+    async function mySendLLMPrompt() {
+        if (!myWebSocket || myWebSocket.readyState !== WebSocket.OPEN) return;
+        
+        const myPromptText = document.getElementById('myMessageInput').value.trim();
+        const myUserName = myGetUserName();
+        
+        if (myUserName && myPromptText) {
+            myDisplaySystemMessage(`Sending LLM Prompt: "${myPromptText.substring(0, 30)}..."`);
+            
+            // The key difference: sending a 'prompt' field instead of 'message'
+            const myJson = JSON.stringify({ 
+                username: myUserName, 
+                prompt: myPromptText 
+            });
+            
+            await myWebSocket.send(myJson);
+            document.getElementById('myMessageInput').value = "";
+        }
+    }
+
+    // Handle ENTER key press for the default action (Chat Message)
+    document.getElementById('myMessageInput').onkeyup = function(myEvent) {
+        if (myEvent.key === "Enter") {
+            mySendMessage();
+        }
+    };
+
+    // Start connection when the window loads
+    window.onload = myConnect;
+</script>
+</body>
+</html>

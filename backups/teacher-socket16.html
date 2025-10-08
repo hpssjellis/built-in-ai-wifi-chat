@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,7 +50,7 @@
         let myTimerInterval = null;
         let myStartTime = 0;
         let myPromptQueue = []; // Queue to store incoming prompts
-                
+        
         const myChatLog = document.getElementById('myChatLog');
         const myWSStatus = document.getElementById('myWSStatus');
         const myAIStatus = document.getElementById('myAIStatus');
@@ -164,13 +163,19 @@
                         myData = JSON.parse(myEvent.data);
                     } catch (e) {
                         // If the server sends plain text, we default the username
-                        myData = { username: "Student", message: myEvent.data };
-                        myDisplaySystemMessage("Warning: Received non-JSON data from server. User defaulted to 'Student'.", 'error', false);
+                        myData = { username: "System", message: myEvent.data };
+                        myDisplaySystemMessage("Warning: Received non-JSON data from server. User defaulted to 'System'.", 'error', false);
                     }
 
-                    const myUser = myData.username || "Student";
+                    const myUser = myData.username || "System"; // Changed default user from 'Student' to 'System' for non-chat messages
                     const myText = myData.message;
                     
+                    // CRITICAL FIX: Ensure myText is a valid, non-empty string before processing.
+                    if (typeof myText !== 'string' || myText.trim() === '') {
+                        myDisplaySystemMessage(`Skipping non-chat/empty message from ${myUser}`, 'system', false);
+                        return; // Exit the onmessage handler early to prevent passing undefined to the queue.
+                    }
+
                     myDisplayMessage(`[${myUser}] ${myText}`, 'other'); // Display student message locally
                     
                     // Trigger the AI processing chain (now just enqueues and starts queue)
@@ -243,7 +248,7 @@
                 const myPromptValue = myPromptObject.prompt;
                 const myUserName = myPromptObject.user;
                 
-                // Check for the [LLM] tag
+                // Check for the [LLM] tag (This is the line that previously crashed if myPromptValue was undefined)
                 if (!myPromptValue.includes('[LLM]')) {
                     myDisplaySystemMessage(`Message from ${myUserName} does not contain [LLM]. Skipping AI.`, 'system', false);
                     myCurrentPrompt.value = `Skipped: [${myUserName}] ${myPromptValue}`;
@@ -300,7 +305,7 @@
             myAIStatus.textContent = "AI Status: Ready to generate responses.";
             myAIStatus.style.color = 'green';
         }
-                
+        
         // --- Message Display Functions ---
 
         /**
