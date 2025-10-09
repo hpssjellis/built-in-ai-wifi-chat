@@ -50,7 +50,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html     expecting JSON  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html     Good new stable Oct 6, 2025  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket11.html 
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket11.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket12.html    trying to connect to the esp32  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket13.html   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket14.html  
