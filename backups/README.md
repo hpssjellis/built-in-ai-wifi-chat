@@ -30,7 +30,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket01.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket02.html    New name pre-entry  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket03.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket04.html    
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket05.html    Good new stable OCt 6th, 2025
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket05.html    Good new stable OCt 6th, 2025  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket06.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket07.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket08.html    
@@ -63,9 +63,11 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html
 
 
 ## ESP32 wifi access and websocket server and student HTML generator with send and prompt
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket00.ino  Always the best when ready
+
+
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32s3-webpage01.ino   proof of concept counter  
-
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket02.ino  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket03.ino   Kind of fully works  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket04.ino  
