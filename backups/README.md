@@ -40,22 +40,22 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/student-socket08.html
 ## These backups are for the teacher with a laptop with Chrome Built in AI and serving the node server.
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket00.html    Typically the same as the main one and the most stable  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket01.html   
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket01.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket02.html   wrong API  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket03.html   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket04.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket05.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket06.html kind of OK  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket07.html  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html     expecting JSON
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html     Good new stable OCt 6, 2025
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket08.html     expecting JSON  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket09.html     Good new stable Oct 6, 2025  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket10.html     expecting JSON, not really what I thought it would do  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket11.html 
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket12.html    trying to connect to the esp32
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket13.html  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket12.html    trying to connect to the esp32  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket13.html   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket14.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket15.html  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket16.html  works just cant send the LLM data back.
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket16.html  works just cant send the LLM data back.  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket17.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket18.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html    
