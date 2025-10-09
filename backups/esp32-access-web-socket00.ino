@@ -24,10 +24,10 @@ const char *myHtmlPage = R"rawliteral(
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ESP32 JSON Chat</title>
 <style>
-body { font-family: sans-serif; background: #f9fafb; text-align:center; padding: 20px; }
-#myChatBox { width:95%; max-width:400px; margin:auto; background:white; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1); padding:10px; }
+body { margin:0; padding:0; background:#f9fafb; font-family:sans-serif; }
+#myChatBox { width:100%; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:10px; box-sizing:border-box; }
 h2 { color:#2563eb; margin-top: 0; }
-#myMessages { height:300px; overflow-y:auto; border:1px solid #ccc; padding:5px; border-radius:6px; text-align:left; margin-bottom: 10px; }
+#myMessages {width:95%; height:60vh; overflow:auto; border:1px solid #ccc; border-radius:6px; padding:5px; text-align:left; resize:both; }
 .myName { font-weight:bold; color:#2563eb; }
 .mySystem { color:#6b7280; font-size:12px; text-align:center; margin:4px 0; }
 .my-input-group { display: flex; gap: 4px; }
@@ -56,7 +56,7 @@ h2 { color:#2563eb; margin-top: 0; }
 <div class="my-input-group">
     <input id="myMessageInput" placeholder="Type a message..." style="padding:6px; border-radius: 6px; border: 1px solid #ccc;">
     <input type="button" id="myChatButton" value="Send" onclick="mySendMessage(false)">
-    <input type="button" id="myPromptButton" value="Prompt 🤖" onclick="mySendMessage(true)">
+    <input type="button" id="myPromptButton" value="Prompt" onclick="mySendMessage(true)">
 </div>
 
 <div id="myMessages"></div>
