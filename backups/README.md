@@ -72,7 +72,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-sock
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket03.ino   Kind of fully works  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket04.ino   Stable for esp32
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket05.ino   resizing the main container
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket06.ino  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket06.ino  Nice new stable OCt 9th, 2025   
 
 
 ## Notes
