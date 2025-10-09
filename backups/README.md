@@ -16,7 +16,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server04.js  wor
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server05.js  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server06.js   trying to get chat and LLM   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server07.js  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js Good new stable Oct 6th, 2025    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server08.js Good new stable Oct 6th, 2025 . This is the one for NodeJS   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server09.js  Trying to open  ability for other computers to access 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server10.js     
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server11.js     
@@ -58,7 +58,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket15.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket16.html  works just cant send the LLM data back.  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket17.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket18.html  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html    
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html  Minor duplication issue, this is good for esp32  
 
 
 
@@ -70,7 +70,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-sock
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32s3-webpage01.ino   proof of concept counter  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket02.ino  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket03.ino   Kind of fully works  
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket04.ino  
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket04.ino   Stable for esp32
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket05.ino  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/esp32-access-web-socket06.ino  
 
