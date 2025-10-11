@@ -1,6 +1,14 @@
 # built-in-ai-wifi-chat
 
 
+
+
+[https://www.youtube.com/watch?v=NTYGkRdZ5Yw&list=PL57Dnr1H_egsvfrvJdJdeVPaHVmy87S0i&index=3&pp=iAQB
+![built-in-ai-wifi-chat](https://img.youtube.com/vi/NTYGkRdZ5Yw/0.jpg)](https://www.youtube.com/watch?v=NTYGkRdZ5Yw&list=PL57Dnr1H_egsvfrvJdJdeVPaHVmy87S0i&index=3&pp=iAQB)
+
+
+
+
 ```
 Download this repository
 extract it
