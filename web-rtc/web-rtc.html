@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My P2P WebRTC Chat</title>
+</head>
+<body style="margin:0; padding:10px; font-family:sans-serif; background:#f9fafb;">
+<div id="myChatContainer" style="max-width:450px; margin:auto; display:flex; flex-direction:column; gap:8px;">
+    <h2 style="color:#2563eb; margin-top: 0;">WebRTC P2P Chat</h2>
+    <p style="margin: 0; font-size:14px;">
+        <span style="font-weight:bold;">Status:</span> 
+        <span id="myStatus" style="color:red; font-weight:bold;">Disconnected</span>
+    </p>
+
+    <input id="myNameInput" placeholder="Your name (e.g., User A)" style="padding:6px; border: 1px solid #ccc;">
+
+    <div style="display:flex; gap:4px; margin-bottom: 4px;">
+        <button onclick="myStartOffer()" id="myOfferButton" style="padding: 6px 10px; border: none; cursor: pointer; font-weight: bold; background-color: #059669; color: white;">Start Chat (Offer)</button>
+        <button onclick="myWaitForOffer()" id="myAnswerButton" style="padding: 6px 10px; border: none; cursor: pointer; font-weight: bold; background-color: #2563eb; color: white;">Wait for Chat (Answer)</button>
+    </div>
+
+    <div id="myMessages" style="height:300px; overflow:auto; border:1px solid #ccc; padding:5px; text-align:left; background-color:white;"></div>
+
+    <div style="display: flex; gap: 4px;">
+        <input id="myMessageInput" placeholder="Type a message..." style="padding:6px; border: 1px solid #ccc; flex-grow: 1;">
+        <input type="button" value="Send" onclick="mySendMessage()" id="myChatButton" style="padding: 6px 10px; border: none; cursor: pointer; font-weight: bold; background-color: #f59e0b; color: white;">
+    </div>
+</div>
+
+<script>
+let myWebSocket;
+let myPeerConnection;
+let myDataChannel;
+let myName = "";
+let myIsOfferer = false;
+
+// --- Web Socket (Signaling Channel) ---
+const mySignalingServerUrl = 'ws://localhost:8080'; // **CHANGE PORT/HOST TO YOUR NODE.JS SERVER**
+
+/**
+ * @brief Establishes the WebSocket connection to the Node.js Signaling Server.
+ */
+async function myConnectSignaling() {
+    myWebSocket = new WebSocket(mySignalingServerUrl);
+
+    myWebSocket.onopen = () => {
+        myDisplaySystemMessage("Signaling connected. Choose 'Start Chat' or 'Wait for Chat'.");
+    };
+
+    myWebSocket.onmessage = async (event) => {
+        try {
+            const mySignal = JSON.parse(event.data);
+            await myHandleSignalingMessage(mySignal);
+        } catch (e) {
+            console.error("Error handling signaling message:", e);
+        }
+    };
+
+    myWebSocket.onclose = () => {
+        myDisplayStatus("Disconnected", "red");
+        myDisplaySystemMessage("Signaling connection lost. Refresh page to retry.");
+    };
+}
+
+/**
+ * @brief Sends a message over the WebSocket (Signaling).
+ */
+function mySendSignal(mySignal) {
+    if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+        myWebSocket.send(JSON.stringify(mySignal));
+    }
+}
+
+// --- WebRTC (P2P) Connection Setup ---
+
+function myCreatePeerConnection(myIsOffererFlag) {
+    myIsOfferer = myIsOffererFlag;
+    myName = document.getElementById('myNameInput').value.trim() || (myIsOfferer ? 'Offerer' : 'Answerer');
+    document.getElementById('myNameInput').value = myName;
+
+    const myIceServers = {
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    };
+
+    myPeerConnection = new RTCPeerConnection(myIceServers);
+
+    myPeerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            mySendSignal({ type: 'candidate', candidate: event.candidate });
+        }
+    };
+
+    myPeerConnection.oniceconnectionstatechange = () => {
+        if (myPeerConnection.iceConnectionState === 'connected') {
+            myDisplayStatus("P2P Connected", "green");
+            myDisplaySystemMessage("P2P data channel established!");
+        } else if (myPeerConnection.iceConnectionState === 'disconnected') {
+            myDisplayStatus("P2P Disconnected", "red");
+            myDisplaySystemMessage("P2P connection lost.");
+        }
+    };
+
+    if (myIsOfferer) {
+        // Only the offerer creates the data channel
+        myDataChannel = myPeerConnection.createDataChannel("myChatChannel");
+        myDataChannel.onopen = myHandleDataChannelOpen;
+        myDataChannel.onmessage = myHandleDataChannelMessage;
+        myDisplaySystemMessage("Peer Connection created as OFFERER. Waiting for ICE candidates...");
+    } else {
+        // The answerer listens for the data channel to be opened
+        myPeerConnection.ondatachannel = (event) => {
+            myDataChannel = event.channel;
+            myDataChannel.onopen = myHandleDataChannelOpen;
+            myDataChannel.onmessage = myHandleDataChannelMessage;
+        };
+        myDisplaySystemMessage("Peer Connection created as ANSWERER. Waiting for Offer...");
+    }
+}
+
+/**
+ * @brief Action for the user initiating the chat.
+ */
+async function myStartOffer() {
+    if (!myWebSocket || myWebSocket.readyState !== WebSocket.OPEN) {
+        myDisplaySystemMessage("Signaling not ready. Please wait.");
+        return;
+    }
+    myCreatePeerConnection(true); // True means this peer is the offerer
+
+    try {
+        const myOffer = await myPeerConnection.createOffer();
+        await myPeerConnection.setLocalDescription(myOffer);
+        mySendSignal({ type: 'offer', sdp: myPeerConnection.localDescription });
+        myDisplaySystemMessage("Offer sent. Waiting for remote Answer...");
+    } catch (e) {
+        console.error("Error creating offer:", e);
+        myDisplaySystemMessage("Error starting P2P connection.");
+    }
+}
+
+/**
+ * @brief Action for the user waiting to receive the chat invite.
+ */
+function myWaitForOffer() {
+    if (!myWebSocket || myWebSocket.readyState !== WebSocket.OPEN) {
+        myDisplaySystemMessage("Signaling not ready. Please wait.");
+        return;
+    }
+    myCreatePeerConnection(false); // False means this peer is the answerer
+    // Answerer waits for the incoming 'offer' signal in myHandleSignalingMessage
+}
+
+/**
+ * @brief Handles incoming signaling messages (Offer, Answer, Candidate).
+ */
+async function myHandleSignalingMessage(mySignal) {
+    if (!myPeerConnection) {
+        // If an offer comes in, and the connection hasn't been set up yet,
+        // automatically set it up as the answerer.
+        if (mySignal.type === 'offer') {
+            myWaitForOffer(); 
+        } else {
+            // Ignore other messages until connection is created
+            return;
+        }
+    }
+
+    if (mySignal.type === 'offer' && !myIsOfferer) {
+        // Answerer logic: receive offer, set remote, create and send answer
+        await myPeerConnection.setRemoteDescription(new RTCSessionDescription(mySignal.sdp));
+        const myAnswer = await myPeerConnection.createAnswer();
+        await myPeerConnection.setLocalDescription(myAnswer);
+        mySendSignal({ type: 'answer', sdp: myPeerConnection.localDescription });
+        myDisplaySystemMessage("Received Offer. Answer sent.");
+
+    } else if (mySignal.type === 'answer' && myIsOfferer) {
+        // Offerer logic: receive answer, set remote
+        await myPeerConnection.setRemoteDescription(new RTCSessionDescription(mySignal.sdp));
+        myDisplaySystemMessage("Received Answer. P2P Negotiation Complete.");
+
+    } else if (mySignal.type === 'candidate') {
+        // Both sides add ICE candidates
+        try {
+            await myPeerConnection.addIceCandidate(new RTCIceCandidate(mySignal.candidate));
+        } catch (e) {
+            console.error('Error adding received ICE candidate:', e);
+        }
+    }
+}
+
+// --- Data Channel Handlers (The Chat Logic) ---
+
+function myHandleDataChannelOpen() {
+    myDisplayStatus("P2P Connected", "green");
+    document.getElementById('myOfferButton').disabled = true;
+    document.getElementById('myAnswerButton').disabled = true;
+}
+
+function myHandleDataChannelMessage(event) {
+    try {
+        const myData = JSON.parse(event.data);
+        if (myData.myUserName && myData.myMessage) {
+            myDisplayMessage(myData.myUserName, myData.myMessage, false);
+        }
+    } catch (e) {
+        console.error("Error parsing P2P chat message:", e);
+    }
+}
+
+// --- Chat Interface Functions ---
+
+function mySendMessage() {
+    if (!myDataChannel || myDataChannel.readyState !== 'open') {
+        myDisplaySystemMessage("Error: P2P Data Channel is not open.");
+        return;
+    }
+    
+    const myMessage = document.getElementById('myMessageInput').value.trim();
+    if (myMessage) {
+        // Package for P2P sending
+        const myJson = JSON.stringify({ myUserName: myName, myMessage: myMessage });
+        myDataChannel.send(myJson);
+        
+        // Display locally for the sender
+        myDisplayMessage(myName, myMessage, true);
+        
+        document.getElementById('myMessageInput').value = "";
+    }
+}
+
+function myDisplayMessage(myUser, myMsg, myIsSelf) {
+    const myMessages = document.getElementById('myMessages');
+    const myDiv = document.createElement('div');
+    
+    // Simple inline CSS for distinction
+    const myColor = myIsSelf ? '#059669' : '#1e40af';
+    myDiv.innerHTML = `<span style="font-weight:bold; color:${myColor};">${myUser}:</span> ${myMsg}`;
+    
+    myMessages.appendChild(myDiv);
+    myMessages.scrollTop = myMessages.scrollHeight;
+}
+
+function myDisplaySystemMessage(myMsg) {
+    const myMessages = document.getElementById('myMessages');
+    const myDiv = document.createElement('div');
+    myDiv.textContent = "--- " + myMsg + " ---";
+    myDiv.style.color = "#6b7280";
+    myDiv.style.fontSize = "12px";
+    myDiv.style.textAlign = "center";
+    myDiv.style.margin = "4px 0";
+    myMessages.appendChild(myDiv);
+    myMessages.scrollTop = myMessages.scrollHeight;
+}
+
+function myDisplayStatus(myText, myColor) {
+    document.getElementById('myStatus').textContent = myText;
+    document.getElementById('myStatus').style.color = myColor;
+}
+
+// Start the signaling connection on load
+window.onload = myConnectSignaling;
+</script>
+</body>
+</html>
