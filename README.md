@@ -9,11 +9,11 @@
 
 Update: Oct 12, 2025
 
-We have moved the ESP32 coe into it's own folder. That is the main code area that needs the ESP32 microcontroller
+1. We have moved the ESP32 code into it's own folder. That is the main code area that needs the ESP32 microcontroller
 
-The nodeJS code has been moved to it's own folder and we will continue to develp it, however we had problems making a standalone hotspot on windows, wile the esp32 solution worked immediately.
+2. The nodeJS code has been moved to it's own folder and we will continue to develp it, however we had problems making a standalone hotspot on windows, wile the esp32 solution worked immediately.
 
-The webRTC folder is an exploration of another possible method, it is under development.
+3. The webRTC folder is an exploration of another possible method, it is under development.
 
 Note: For all methods to reduce CORS complaints from your browser any webpages should be loaded locally with then allows ```http``` connections, IF the page was loaded from the internet your browser would inforce ```https``` connections and the websocket would fail. Possibly to create a secure websocet ```wss``` that is more complex than we wanted to work with.
 
