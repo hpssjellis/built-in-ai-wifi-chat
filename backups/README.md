@@ -1,5 +1,10 @@
 
-The main demo page is at 
+
+NOTE: I took this offline since we can not connect when using an https connection so online access is very confusing.
+
+better to download the enire repository and load pages from your computer.
+
+The main demo page was at 
 
 
 https://hpssjellis.github.io/built-in-ai-wifi-chat/student-socket.html
