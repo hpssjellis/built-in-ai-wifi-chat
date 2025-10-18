@@ -210,7 +210,7 @@ void setup() {
     delay(3000);
     
     // Set up Soft Access Point
-    WiFi.softAP(mySsid, myPassword);
+    WiFi.softAP(mySsid, myPassword, 0, 10); // ssid, pass, hidden, max client
     IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP: "); Serial.println(myIP);
 
