@@ -32,18 +32,15 @@ Note: For all methods to reduce CORS complaints from your browser any webpages s
 
 .
 
+<br><br>Github and WiFi Login<br>
+<img width="1891" height="961" alt="wifi-SSID" src="https://github.com/user-attachments/assets/47b6633b-a4b5-4304-a566-8d73c079561b" />
 
-<br><br>Teacher Connect<br>
-<img width="1273" height="779" alt="teacher-start" src="https://github.com/user-attachments/assets/cf085d5e-22aa-43e5-9ca2-06dfb07e7441" />
 
-<br><br>Pre-Prompt<br>
-<img width="1376" height="720" alt="teacher-monitor" src="https://github.com/user-attachments/assets/53a53eac-f271-4043-b476-f5f198f4cb19" />
 
-<br><br>ws://#.#.#.#/ws<br>
-<img width="323" height="365" alt="teacher-login" src="https://github.com/user-attachments/assets/cf5df16e-99e2-4e61-9dbb-f0beb0693fd0" />
 
-<br><br>Student Prompt<br>
-<img width="1361" height="525" alt="student-prompt" src="https://github.com/user-attachments/assets/ef0d2f34-d292-4cc0-83ba-585dfc9478d3" />
+<br><br>Arduino IDE passwords and Serial Monitor for the IP<br>
+<img width="632" height="585" alt="arduino-serial-monitor" src="https://github.com/user-attachments/assets/8e230ed2-b353-4b7a-9816-97659ff8b1e4" />
+
 
 
 <br><br>Student access<br>
@@ -54,12 +51,21 @@ Note: For all methods to reduce CORS complaints from your browser any webpages s
 <img width="812" height="451" alt="not-secure" src="https://github.com/user-attachments/assets/5a22c258-b477-45e8-92db-a19306d05a06" />
 
 
-<br><br>Arduino IDE passwords and Serial Monitor for the IP<br>
-<img width="632" height="585" alt="arduino-serial-monitor" src="https://github.com/user-attachments/assets/8e230ed2-b353-4b7a-9816-97659ff8b1e4" />
+<br><br>ws://#.#.#.#/ws<br>
+<img width="323" height="365" alt="teacher-login" src="https://github.com/user-attachments/assets/cf5df16e-99e2-4e61-9dbb-f0beb0693fd0" />
 
 
-<br><br>Github and WiFi Login<br>
-<img width="1891" height="961" alt="wifi-SSID" src="https://github.com/user-attachments/assets/47b6633b-a4b5-4304-a566-8d73c079561b" />
+<br><br>Teacher Connect<br>
+<img width="1273" height="779" alt="teacher-start" src="https://github.com/user-attachments/assets/cf085d5e-22aa-43e5-9ca2-06dfb07e7441" />
+
+<br><br>Pre-Prompt<br>
+<img width="1376" height="720" alt="teacher-monitor" src="https://github.com/user-attachments/assets/53a53eac-f271-4043-b476-f5f198f4cb19" />
+
+<br><br>Student Prompt<br>
+<img width="1361" height="525" alt="student-prompt" src="https://github.com/user-attachments/assets/ef0d2f34-d292-4cc0-83ba-585dfc9478d3" />
+
+
+
 
 
 
