@@ -65,7 +65,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket17.html
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket18.html  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket19.html  Minor duplication issue, this is good for esp32  
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket20.html    promising added prompt needs testing    
-https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket21.html    testing for stable   
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket21.html    New Stable Oct 23, 2025   
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket22.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket23.html    
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/teacher-socket24.html    
