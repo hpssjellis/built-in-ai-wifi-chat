@@ -80,7 +80,7 @@ let myWebSocket;
 let myName = "";
 
 function myConnect() {
-    const myUrl = `ws://${window.location.hostname}/ws`;
+    const myUrl = `ws://${window.location.hostname}:8080`;
     myWebSocket = new WebSocket(myUrl);
 
     myWebSocket.onopen = () => {
