@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Teacher AI Client (Local LLM Responder)</title>
+    <style>
+        /* Minimal CSS for better readability in the final output */
+        body { font-family: Arial, sans-serif; }
+        #myControls button:not(:disabled) { transition: background-color 0.2s; }
+        #myControls button:hover:not(:disabled) { background-color: darkgreen !important; }
+    </style>
 </head>
 <body>
     <div id="myContainer">
@@ -25,15 +31,19 @@
                 <option value="ws://localhost:8080">1. Localhost: ws://localhost:8080</option>
                 <option value="custom">2. Enter Custom Address Below</option>
             </select>
-            <input type="text" id="myCustomInput" placeholder="Enter custom ws://address:port" style="display: none; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"/>
+            <input type="text" id="myCustomInput" oninput="myHandleCustomInputChange()" placeholder="ws://#.#.#.#/ws" style="display: none; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"/>
             <button id="myConnectButton" onclick="myInitWebSocket()" disabled style="background-color: green; color: white; font-weight: 600; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Connect & Start AI</button>
             
-            <div style="margin-top: 5px; font-size: 14px;">
-                <input type="checkbox" id="myDebugToggle">
+            <div style="margin-top: 5px; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                <input type="checkbox" id="myDebugToggle" onchange="myToggleDebugControls()">
                 <label for="myDebugToggle">Enable Debug Messages (Queue/Skip Status)</label>
             </div>
             
-            <div style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px;">
+            <div id="myPrefixControls" style="display: none; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                <h2 style="font-size: 16px; margin-top: 0; color: #E91E63;">Prompt Prefix (LLM Instruction):</h2>
+                <textarea id="myPromptPrefix" rows="2" placeholder='E.g., "Answer in one sentence, be brief." This prepends text to the student prompt before sending to the AI.' style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: vertical; min-height: 40px;">Answer in one sentence.</textarea>
+            </div>
+            <div style="margin-top: 5px; padding-top: 5px;">
                 <h2 style="font-size: 16px; margin-top: 0; color: #4CAF50;">Current Prompt:</h2>
                 <textarea id="myCurrentPrompt" rows="1" placeholder="Incoming student messages will appear here..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: vertical; min-height: 40px;"></textarea>
             </div>
@@ -49,7 +59,7 @@
         let myTimerInterval = null;
         let myStartTime = 0;
         let myPromptQueue = []; // Queue to store incoming prompts
-                
+        
         const myChatLog = document.getElementById('myChatLog');
         const myWSStatus = document.getElementById('myWSStatus');
         const myAIStatus = document.getElementById('myAIStatus');
@@ -58,7 +68,11 @@
         const myCustomInput = document.getElementById('myCustomInput');
         const myConnectButton = document.getElementById('myConnectButton');
         const myCurrentPrompt = document.getElementById('myCurrentPrompt');
-        const myDebugToggle = document.getElementById('myDebugToggle'); // New element
+        const myDebugToggle = document.getElementById('myDebugToggle'); 
+        
+        // NEW VARIABLE
+        const myPromptPrefix = document.getElementById('myPromptPrefix');
+        const myPrefixControls = document.getElementById('myPrefixControls');
 
         // --- Timer Functions ---
 
@@ -95,6 +109,15 @@
             myCurrentPrompt.style.height = myCurrentPrompt.scrollHeight + 'px'; 
         }
 
+        // NEW FUNCTION TO TOGGLE DEBUG CONTROLS
+        function myToggleDebugControls() {
+            if (myDebugToggle.checked) {
+                myPrefixControls.style.display = 'block';
+            } else {
+                myPrefixControls.style.display = 'none';
+            }
+        }
+
         // --- UI & Connection Logic ---
         
         function myHandleSelectChange() {
@@ -102,7 +125,8 @@
             if (mySelectedValue === 'custom') {
                 myCustomInput.style.display = 'block';
                 myServerUrl = myCustomInput.value.trim();
-                myConnectButton.disabled = !myServerUrl;
+                // Enable button only if custom input has text
+                myConnectButton.disabled = !myServerUrl; 
             } else if (mySelectedValue) {
                 myCustomInput.style.display = 'none';
                 myServerUrl = mySelectedValue;
@@ -161,15 +185,21 @@
                         myData = JSON.parse(myEvent.data);
                     } catch (e) {
                         // If the server sends plain text, we default the username
-                        myData = { username: "Student", message: myEvent.data };
-                        myDisplaySystemMessage("Warning: Received non-JSON data from server. User defaulted to 'Student'.", 'error', false);
+                        myData = { username: "System", message: myEvent.data };
+                        myDisplaySystemMessage("Warning: Received non-JSON data from server. User defaulted to 'System'.", 'error', false);
                     }
 
-                    const myUser = myData.username || "Student";
+                    const myUser = myData.username || "System"; // Changed default user from 'Student' to 'System' for non-chat messages
                     const myText = myData.message;
                     
+                    // CRITICAL FIX: Ensure myText is a valid, non-empty string before processing.
+                    if (typeof myText !== 'string' || myText.trim() === '') {
+                        myDisplaySystemMessage(`Skipping non-chat/empty message from ${myUser}`, 'system', false);
+                        return; // Exit the onmessage handler early to prevent passing undefined to the queue.
+                    }
+
                     myDisplayMessage(`[${myUser}] ${myText}`, 'other'); // Display student message locally
-                                            
+                    
                     // Trigger the AI processing chain (now just enqueues and starts queue)
                     await myProcessStudentPrompt(myText, myUser);
                 };
@@ -203,7 +233,8 @@
 
             try {
                 myAIStatus.textContent = 'AI Status: Creating LanguageModel session...';
-                myLanguageModelSession = await LanguageModel.create();
+                // NOTE: Using a different model might require passing an argument to LanguageModel.create()
+                myLanguageModelSession = await LanguageModel.create(); 
                 myAIStatus.textContent = 'AI Status: Ready to generate responses.';
                 myAIStatus.style.color = 'green';
                 return true;
@@ -219,7 +250,7 @@
         async function myProcessStudentPrompt(myPromptValue, myUserName) {
             // Store the full prompt object in the queue
             myPromptQueue.push({ prompt: myPromptValue, user: myUserName });
-            myDisplaySystemMessage("New message queued.", 'system', false);
+            myDisplaySystemMessage(`New message queued. Queue size: ${myPromptQueue.length}`, 'system', false);
 
             // 2. If the AI is not currently busy, start processing the queue
             if (!myIsProcessing) {
@@ -230,25 +261,34 @@
         // Processes items in the queue one by one
         async function myProcessQueue() {
             myIsProcessing = true;
-            myAIStatus.textContent = 'AI Status: PROCESSING QUEUE...';
+            myAIStatus.textContent = `AI Status: PROCESSING QUEUE (${myPromptQueue.length} remaining)...`;
             myAIStatus.style.color = 'orange';
 
             // Keep processing as long as there are items in the queue
             while (myPromptQueue.length > 0) {
                 // 1. Dequeue the next prompt object
                 const myPromptObject = myPromptQueue.shift();
-                const myPromptValue = myPromptObject.prompt;
+                const myStudentPrompt = myPromptObject.prompt; // Renamed for clarity
                 const myUserName = myPromptObject.user;
                 
                 // Check for the [LLM] tag
-                if (!myPromptValue.includes('[LLM]')) {
+                if (!myStudentPrompt.includes('[LLM]')) {
                     myDisplaySystemMessage(`Message from ${myUserName} does not contain [LLM]. Skipping AI.`, 'system', false);
-                    myCurrentPrompt.value = `Skipped: [${myUserName}] ${myPromptValue}`;
+                    myCurrentPrompt.value = `Skipped: [${myUserName}] ${myStudentPrompt}`;
                     myAutoResizeTextarea(); // Auto-resize on content change
                     continue; // Skip the rest of the loop for this prompt and go to the next item
                 }
 
-                myCurrentPrompt.value = `[${myUserName}] ${myPromptValue}`;
+                // NEW: Apply the prefix to the prompt here
+                let myFinalPrompt = myStudentPrompt;
+                const myPrefixValue = myPromptPrefix.value.trim();
+
+                if (myPrefixValue) {
+                    myFinalPrompt = `${myPrefixValue} ${myStudentPrompt}`;
+                    myDisplaySystemMessage(`Applying prefix: "${myPrefixValue.substring(0, 30)}..."`, 'system', false);
+                }
+
+                myCurrentPrompt.value = `[${myUserName}] ${myFinalPrompt}`; // Display the final prompt
                 myAutoResizeTextarea(); // Auto-resize on content change
                 myDisplaySystemMessage("AI is generating response...", 'system', true); // Always show AI activity
 
@@ -260,8 +300,8 @@
                     // --- Timer Start ---
                     myStartTimer();
 
-                    // 2. Send prompt to Chrome AI
-                    const myAIResponseText = await myLanguageModelSession.prompt(myPromptValue);
+                    // 2. Send the FINAL prompt (with prefix) to Chrome AI
+                    const myAIResponseText = await myLanguageModelSession.prompt(myFinalPrompt);
                     
                     // --- Timer Stop ---
                     myStopTimer();
@@ -272,11 +312,12 @@
 
                     // 4. Send AI Response back to Node.js server for broadcast
                     if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
-                        // Send a formatted reply object back to the server
+                        // FIX: Format the reply using the keys the ESP32 code expects (myUserName, myMessage).
                         const myServerReply = {
-                            targetUser: myUserName,
-                            responseText: myAIResponseText
+                            myUserName: "TeacherAI", // Changed username to 'TeacherAI'
+                            myMessage: myResponseDisplay // The AI-generated message
                         };
+                        
                         myWebSocket.send(JSON.stringify(myServerReply));
                     } else {
                         myDisplaySystemMessage("AI response generated, but WS is closed. Cannot send.", 'error', true);
@@ -289,6 +330,7 @@
                     myDisplaySystemMessage("AI FAILED to respond. Check your Chrome flags.", 'error', true);
                     console.error("AI Execution Error:", myError);
                 }
+                myAIStatus.textContent = `AI Status: PROCESSING QUEUE (${myPromptQueue.length} remaining)...`;
             }
 
             // After the while loop finishes, the queue is empty
@@ -296,7 +338,7 @@
             myAIStatus.textContent = "AI Status: Ready to generate responses.";
             myAIStatus.style.color = 'green';
         }
-                
+        
         // --- Message Display Functions ---
 
         /**
@@ -361,6 +403,7 @@
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => { 
             myHandleSelectChange();
+            myToggleDebugControls(); // Initialize the visibility of the new controls
         });
     </script>
 </body>
