@@ -26,6 +26,7 @@ https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server09.js  Try
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server10.js     
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server11.js     
 https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server12.js       
+https://hpssjellis.github.io/built-in-ai-wifi-chat/backups/node-server14.js      improving the generated webpage to be like the esp32 one. 
 
 
 ## But these backups are also at for the student
