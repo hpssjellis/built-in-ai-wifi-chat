@@ -13,9 +13,9 @@ Update: Oct 12, 2025
 
 2. The nodeJS code has been moved to it's own folder and we will continue to develop it, however we had problems making a standalone hotspot on windows, while the esp32 solution worked immediately. The node code is now working but has several steps that need to be completed explained in the node folder
 
-3. The webRTC folder is an exploration of another possible method, it is under development.
 
-Note: For all methods to reduce CORS complaints from your browser any webpages should be loaded locally with then allows ```http``` connections, IF the page was loaded from the internet your browser would inforce ```https``` connections and the websocket would fail. Possibly to create a secure websocet ```wss``` that is more complex than we wanted to work with.
+
+Note: For all methods to reduce CORS complaints from your browser any webpages should be loaded locally with then allows ```http``` connections. IF the page was loaded from the internet your browser would inforce ```https``` connections and the websocket would fail. To create a secure websocet ```wss``` that is more complex than we wanted to work with in this project.
 
 
 
