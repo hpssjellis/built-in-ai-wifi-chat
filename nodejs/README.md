@@ -54,10 +54,11 @@ Students access the generated student-socket using the IP
 http://#.#.#.#:8080
 ```
 
-The teacher-socket can be loaded from a different Chrome Built in AI working computer but the page needs to be loaded locally and the login is slightly
+The teacher-socket.html can be loaded from a different Chrome Built in AI working computer but the page needs to be loaded locally and the login is slightly
 different than the esp32
 
-```
+ESSP32  teacher websocket access from teacher-socket.html ``` ws://#.#.#.#/ws ```   
 
+NodeJS teacher websocket access from teacher-socket.html ``` ws://#.#.#.#:8080 ```   
 
 
