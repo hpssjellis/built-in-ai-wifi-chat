@@ -11,7 +11,7 @@ Update: Oct 12, 2025
 
 1. We have moved the ESP32 code into it's own folder. That is the main code area that needs the ESP32 microcontroller
 
-2. The nodeJS code has been moved to it's own folder and we will continue to develp it, however we had problems making a standalone hotspot on windows, wile the esp32 solution worked immediately.
+2. The nodeJS code has been moved to it's own folder and we will continue to develop it, however we had problems making a standalone hotspot on windows, while the esp32 solution worked immediately. The node code is now working but has several steps that need to be completed explained in the node folder
 
 3. The webRTC folder is an exploration of another possible method, it is under development.
 
